@@ -38,7 +38,7 @@ export const COMPANY_KEYWORDS = {
   伯克希尔: ['伯克希尔', 'BRK.A', 'BRK.B'],
   拼多多: ['拼多多', 'PDD'],
   特斯拉: ['特斯拉', 'TSLA', '马斯克'],
-  谷歌: ['谷歌', 'GOOG', 'Google'],
+  谷歌: ['谷歌', 'GOOG', 'Google', 'GOOGLE'],
   英伟达: ['英伟达', 'NVDA', '黄仁勋'],
   阿里巴巴: ['阿里巴巴', 'BABA'],
   泡泡玛特: ['泡泡玛特', '09992', 'Labubu', '拉布布'],
@@ -48,23 +48,32 @@ export const COMPANY_KEYWORDS = {
   '步步高系': ['步步高', 'OPPO', 'vivo', '小霸王'],
 };
 
-// 形如证券代码的关键词（纯大写字母/数字/点，如 '00700'、'AAPL'、'BRK.B'）用
-// includes 做子串匹配会误命中更长的数字/字母串（如 "1007000" 误中 "00700"，
-// "GOOGLE" 误中 "GOOG"），所以需要边界校验：命中位置前后一个字符不能是 ASCII
-// 字母或数字（括号、$、空格、中文字符等都算合法边界）。
-// 混合大小写/小写的品牌名（如 'iPhone'、'Google'、'vivo'）不是证券代码，
-// 后面紧跟型号数字（iPhone13）是正常写法，不套边界校验，仍用原始 includes。
-const TICKER_RE = /^[A-Z0-9.]+$/;
-const isAsciiAlnum = (ch) => /[A-Za-z0-9]/.test(ch);
+// 由 ASCII 字母/数字/点组成的关键词（不论大小写，如 '00700'、'AAPL'、'BRK.B'、
+// 'iPhone'、'vivo'）用 includes 做子串匹配会误命中更长的数字/字母串（如
+// "1007000" 误中 "00700"，"survivor" 误中 "vivo"），所以一律要做边界校验：
+//   1. 命中位置前面那个字符不能是 ASCII 字母或数字；
+//   2. 命中位置后面那个字符不能是 ASCII 字母；
+//   3. 额外地，如果关键词最后一个字符是数字，那么后面那个字符也不能是数字
+//      （允许 'iPhone13' 这种字母收尾的品牌名+型号写法，但不允许 'SH6005191'
+//      这种数字收尾的代码被更长的数字串吞掉）。
+// 纯中文关键词（如 '苹果'、'茅台'）不做边界校验，仍用原始 includes——中文没有
+// 词边界概念。
+const ASCII_KEYWORD_RE = /^[A-Za-z0-9.]+$/;
+const isAsciiAlpha = (ch) => /[A-Za-z]/.test(ch);
+const isAsciiDigit = (ch) => /[0-9]/.test(ch);
+const isAsciiAlnum = (ch) => isAsciiAlpha(ch) || isAsciiDigit(ch);
 
 function includesWithBoundary(text, keyword) {
+  const endsWithDigit = isAsciiDigit(keyword[keyword.length - 1]);
   let from = 0;
   while (true) {
     const idx = text.indexOf(keyword, from);
     if (idx === -1) return false;
     const before = idx > 0 ? text[idx - 1] : '';
     const after = idx + keyword.length < text.length ? text[idx + keyword.length] : '';
-    if (!isAsciiAlnum(before) && !isAsciiAlnum(after)) return true;
+    const beforeOk = !isAsciiAlnum(before);
+    const afterOk = !isAsciiAlpha(after) && (!endsWithDigit || !isAsciiDigit(after));
+    if (beforeOk && afterOk) return true;
     from = idx + 1;
   }
 }
@@ -74,7 +83,7 @@ export function matchCompanies(text) {
   const hit = new Set();
   for (const [name, keys] of Object.entries(COMPANY_KEYWORDS)) {
     const matched = keys.some((k) =>
-      TICKER_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
+      ASCII_KEYWORD_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
     );
     if (matched) hit.add(name);
   }

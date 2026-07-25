@@ -44,33 +44,34 @@ test('matchCompanies 对无关文本返回空数组', () => {
   expect(matchCompanies('今天天气不错')).toEqual([]);
 });
 
-test('纯数字/字母数字关键词加边界校验，避免子串误命中', () => {
-  // 正常带代码的正文仍能命中（不能修过头）
-  expect(matchCompanies('$腾讯控股(00700)$ 微信生态很强')).toEqual(['腾讯']);
-  // 更长数字串包含 00700 子串，不应误命中
+test('matchCompanies 对所有 ASCII 字母/数字/点关键词（不分大小写）做边界校验：前不能是字母数字、后不能是字母，且关键词以数字结尾时后面也不能是数字', () => {
+  // 前面是数字 → 不命中
   expect(matchCompanies('这个项目今年花了1007000元预算')).toEqual([]);
-  // 中文关键词不受影响，继续用 includes
-  expect(matchCompanies('我觉得苹果这个生意很好')).toEqual(['苹果']);
-  // 纯字母代码：边界内命中，边界外的更长字母串不命中
-  expect(matchCompanies('AAPL 今天涨了')).toEqual(['苹果']);
+  // 关键词以数字结尾，后面又是数字 → 不命中
+  expect(matchCompanies('007001')).toEqual([]);
+  // 前后是合法边界（括号）→ 命中腾讯
+  expect(matchCompanies('$腾讯控股(00700)$ 微信生态很强')).toEqual(['腾讯']);
+  // 前面是字母 → 不命中
   expect(matchCompanies('XAAPLY 不是一个真实代码')).toEqual([]);
-});
-
-test('混合大小写品牌名（如 iPhone+数字型号）不套边界校验，正常命中', () => {
-  // 回归：iPhone13 / iPhone5 是正常的品牌+型号写法，必须命中苹果
+  // 前后合法 → 命中苹果
+  expect(matchCompanies('AAPL 今天涨了')).toEqual(['苹果']);
+  // 关键词以字母结尾，后面跟数字型号，边界规则放行 → 命中苹果
   expect(matchCompanies('iPhone13 销量不错')).toEqual(['苹果']);
   expect(matchCompanies('iPhone5')).toEqual(['苹果']);
+  // 前面是字母（survivor 里的 vivo）→ 不命中，纯小写关键词也要走边界校验
+  expect(matchCompanies('他是个 survivor')).toEqual([]);
+  // 前后合法 → 命中步步高系
+  expect(matchCompanies('vivo 手机')).toEqual(['步步高系']);
+  // 以数字结尾且后面紧跟数字 → 不命中
+  expect(matchCompanies('SH6005191 不是真实代码')).toEqual([]);
+  // 中文关键词不做边界校验，继续用普通 includes
+  expect(matchCompanies('我觉得苹果这个生意很好')).toEqual(['苹果']);
 });
 
-test('证券代码（纯大写字母/数字/点）仍要求边界校验，不因品牌名放宽而失效', () => {
-  // 更长数字串包含 00700 子串，不应误命中腾讯
-  expect(matchCompanies('这个项目今年花了1007000元预算')).toEqual([]);
-  // 更长字母串包含 AAPL 子串，不应误命中苹果
-  expect(matchCompanies('XAAPLY 不是一个真实代码')).toEqual([]);
-  // GOOGLE 包含 GOOG 子串，不应误命中谷歌
-  expect(matchCompanies('GOOGLE 不是股票代码')).toEqual([]);
-  // 真实代码带边界仍要命中
-  expect(matchCompanies('$腾讯控股(00700)$ 微信生态很强')).toEqual(['腾讯']);
+test('matchCompanies 显式识别 GOOGLE 别名，修复此前边界校验对全大写变体引入的假阴性', () => {
+  // GOOGLE 本身现在是显式别名，前后合法边界即可命中，不再依赖 GOOG 子串巧合
+  expect(matchCompanies('GOOGLE 不是股票代码')).toEqual(['谷歌']);
+  expect(matchCompanies('比GOOGLE要复杂很多')).toEqual(['谷歌']);
 });
 
 test('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
@@ -79,6 +80,6 @@ test('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
   const rs = JSON.parse(readFileSync(PATH, 'utf8'));
   const tagged = rs.filter((r) => r.stocks.length > 0).length;
   const matched = rs.filter((r) => matchCompanies(r.own_text || r.text_plain).length > 0).length;
-  // 实测：标签 387 条(3.6%)，关键词 1617 条(14.9%)
+  // 实测：标签 387 条(3.6%)，关键词 1561 条(14.36%)
   expect(matched).toBeGreaterThan(tagged * 3);
 });
