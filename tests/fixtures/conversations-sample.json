@@ -1,0 +1,310 @@
+[
+ {
+  "id": 20326775,
+  "url": "https://xueqiu.com/1247347556/20326775",
+  "created_at": "2011-07-20T00:15:38.000Z",
+  "year": 2011,
+  "type": "retweet",
+  "thread_root_id": 20318852,
+  "own_text": "恩，收保费的比喻可能更恰当。",
+  "char_count": 14,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 20318852,
+    "user": "连天雪",
+    "text_plain": "$雅虎(YHOO)$ 昨天14.65入手，希望第二季财报像Google一样能有惊喜"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "恩，收保费的比喻可能更恰当。",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 1,
+   "reply": 0,
+   "fav": 0,
+   "like": 14
+  }
+ },
+ {
+  "id": 20320386,
+  "url": "https://xueqiu.com/1247347556/20320386",
+  "created_at": "2011-07-15T19:10:51.000Z",
+  "year": 2011,
+  "type": "retweet",
+  "thread_root_id": 20318852,
+  "own_text": "心态的意思是，卖option其实不会有短期赚大钱的机会，但是实实在在产生净现金流的办法，在懂的基本面的前提下长期而言是有机会获得高于平均市场回报的回报的。买option则是投机，常做铁亏。",
+  "char_count": 94,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 20318852,
+    "user": "连天雪",
+    "text_plain": "$雅虎(YHOO)$ 昨天14.65入手，希望第二季财报像Google一样能有惊喜"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "心态的意思是，卖option其实不会有短期赚大钱的机会，但是实实在在产生净现金流的办法，在懂的基本面的前提下长期而言是有机会获得高于平均市场回报的回报的。买option则是投机，常做铁亏。",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 24,
+   "reply": 9,
+   "fav": 37,
+   "like": 26
+  }
+ },
+ {
+  "id": 20320374,
+  "url": "https://xueqiu.com/1247347556/20320374",
+  "created_at": "2011-07-15T18:52:23.000Z",
+  "year": 2011,
+  "type": "reply",
+  "thread_root_id": 20318852,
+  "own_text": "[汗]我说的卖call一定指的是covered的call，和市场无关但和了解有很大的关系，不了解的公司绝对不能碰任何option。卖put也不需要“大量”的资金，钱多多做些，没钱就不做，和别的一样。",
+  "char_count": 112,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 20318852,
+    "user": "连天雪",
+    "text_plain": "$雅虎(YHOO)$ 昨天14.65入手，希望第二季财报像Google一样能有惊喜"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "[汗]我说的卖call一定指的是covered的call，和市场无关但和了解有很大的关系，不了解的公司绝对不能碰任何option。卖put也不需要“大量”的资金，钱多多做些，没钱就不做，和别的一样。",
+     "replying_to": "ddslayers"
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 11,
+   "reply": 5,
+   "fav": 23,
+   "like": 22
+  }
+ },
+ {
+  "id": 20320371,
+  "url": "https://xueqiu.com/1247347556/20320371",
+  "created_at": "2011-07-15T18:40:43.000Z",
+  "year": 2011,
+  "type": "reply",
+  "thread_root_id": 20318852,
+  "own_text": "我今天有很多option到期，其中就有些yhoo15块的put，回手卖个15块的短call觉得很舒服啊。",
+  "char_count": 63,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 20318852,
+    "user": "连天雪",
+    "text_plain": "$雅虎(YHOO)$ 昨天14.65入手，希望第二季财报像Google一样能有惊喜"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "我今天有很多option到期，其中就有些yhoo15块的put，回手卖个15块的短call觉得很舒服啊。",
+     "replying_to": "大道无形我有型"
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 0,
+   "reply": 0,
+   "fav": 5,
+   "like": 14
+  }
+ },
+ {
+  "id": 20318910,
+  "url": "https://xueqiu.com/1247347556/20318910",
+  "created_at": "2011-07-15T04:12:31.000Z",
+  "year": 2011,
+  "type": "retweet",
+  "thread_root_id": 20318852,
+  "own_text": "不过我的平均成本比这个低些，而且每年还会下降15%左右。option帮了很多忙。",
+  "char_count": 40,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 20318852,
+    "user": "连天雪",
+    "text_plain": "$雅虎(YHOO)$ 昨天14.65入手，希望第二季财报像Google一样能有惊喜"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "不过我的平均成本比这个低些，而且每年还会下降15%左右。option帮了很多忙。",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 6,
+   "reply": 1,
+   "fav": 14,
+   "like": 21
+  }
+ },
+ {
+  "id": 214950017,
+  "url": "https://xueqiu.com/1247347556/214950017",
+  "created_at": "2022-03-23T04:07:14.000Z",
+  "year": 2022,
+  "type": "retweet",
+  "thread_root_id": 126988939,
+  "own_text": "我其实曾经问过老巴同样的问题：钱对你已经没啥意义了，你做投资的意义在哪里？老巴说：这是一个很好玩的游戏啊！我觉得打高尔夫也有点像，对身体健康也有帮助。",
+  "char_count": 75,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 126988939,
+    "user": "AnthonyFF",
+    "text_plain": "@大道无形我有型[¥200.00] 大道您好， 有个点大的问题， 赚钱的意义和人生的意义？ 我觉得理解好这两个问题对投资会有很大帮助哈，或者说做好投资对解答这两个问题也有很大帮助。"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "我其实曾经问过老巴同样的问题：钱对你已经没啥意义了，你做投资的意义在哪里？老巴说：这是一个很好玩的游戏啊！我觉得打高尔夫也有点像，对身体健康也有帮助。",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 116,
+   "reply": 0,
+   "fav": 95,
+   "like": 807
+  }
+ },
+ {
+  "id": 126993407,
+  "url": "https://xueqiu.com/1247347556/126993407",
+  "created_at": "2019-05-20T16:45:19.000Z",
+  "year": 2019,
+  "type": "retweet",
+  "thread_root_id": 126988939,
+  "own_text": "这个问题每个人每个阶段理解会不一样吧？因为钱本身对我没意义，所以赚钱对我而言主要是责任和乐趣，人也更容易理性。人生的意义很多大家都说过很多了，我也说不清，只能好好活着，为自己，为家人，为大家。",
+  "char_count": 96,
+  "stocks": [],
+  "conversation": {
+   "root": {
+    "id": 126988939,
+    "user": "AnthonyFF",
+    "text_plain": "@大道无形我有型[¥200.00] 大道您好， 有个点大的问题， 赚钱的意义和人生的意义？ 我觉得理解好这两个问题对投资会有很大帮助哈，或者说做好投资对解答这两个问题也有很大帮助。"
+   },
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "这个问题每个人每个阶段理解会不一样吧？因为钱本身对我没意义，所以赚钱对我而言主要是责任和乐趣，人也更容易理性。人生的意义很多大家都说过很多了，我也说不清，只能好好活着，为自己，为家人，为大家。",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 45,
+   "reply": 0,
+   "fav": 76,
+   "like": 166
+  }
+ },
+ {
+  "id": 233464435,
+  "url": "https://xueqiu.com/1247347556/233464435",
+  "created_at": "2022-10-24T14:41:33.000Z",
+  "year": 2022,
+  "type": "original",
+  "thread_root_id": null,
+  "own_text": "$拼多多(PDD)$ \n哇！",
+  "char_count": 14,
+  "stocks": [
+   {
+    "symbol": "PDD",
+    "name": "拼多多"
+   }
+  ],
+  "conversation": {
+   "root": null,
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "$拼多多(PDD)$ \n哇！",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 46,
+   "reply": 2,
+   "fav": 12,
+   "like": 851
+  }
+ },
+ {
+  "id": 401883730,
+  "url": "https://xueqiu.com/1247347556/401883730",
+  "created_at": "2026-07-23T16:49:31.000Z",
+  "year": 2026,
+  "type": "original",
+  "thread_root_id": null,
+  "own_text": "$SpaceX(SPCX)$\n支持一下马斯克的梦想[笑]",
+  "char_count": 28,
+  "stocks": [
+   {
+    "symbol": "SPCX",
+    "name": "SpaceX"
+   }
+  ],
+  "conversation": {
+   "root": null,
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "$SpaceX(SPCX)$\n支持一下马斯克的梦想[笑]",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 64,
+   "reply": 4,
+   "fav": 109,
+   "like": 1170
+  }
+ },
+ {
+  "id": 126825649,
+  "url": "https://xueqiu.com/1247347556/126825649",
+  "created_at": "2019-05-17T04:17:44.000Z",
+  "year": 2019,
+  "type": "original",
+  "thread_root_id": null,
+  "own_text": "赢了！",
+  "char_count": 3,
+  "stocks": [],
+  "conversation": {
+   "root": null,
+   "chain": [
+    {
+     "speaker": "段永平",
+     "text": "赢了！",
+     "replying_to": null
+    }
+   ]
+  },
+  "stats": {
+   "retweet": 6,
+   "reply": 26,
+   "fav": 0,
+   "like": 516
+  }
+ }
+]
