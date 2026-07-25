@@ -138,7 +138,25 @@ export function validateEnrichment(entry, conv) {
     id,
     'companies',
     warnings
-  ).map((c) => {
+  )
+    .filter((c) => {
+      // isDroppableElement 只拦住了非对象/null，但 typeof [] === 'object'，
+      // 数组元素会漏过去，被当成合法公司对象做字段修复，产出带数字键、
+      // 没有 name 的垃圾记录（如 [1,2,3] → {"0":1,"1":2,"2":3,stance,symbol}）。
+      // 这里补上整条校验：元素必须是非数组的普通对象，且 name 必须是非空字符串
+      // （trim 后非空）。不满足就整条丢弃并告警，不修补——因为连 name 都没有，
+      // 没有可修复的基础，下游按 name 建索引会被污染。
+      if (Array.isArray(c)) {
+        warnings.push(`[${id}] companies 中存在非法元素（数组），已丢弃：${JSON.stringify(c)}`);
+        return false;
+      }
+      if (typeof c.name !== 'string' || c.name.trim().length === 0) {
+        warnings.push(`[${id}] companies 中存在非法元素（缺少合法 name），已丢弃：${JSON.stringify(c)}`);
+        return false;
+      }
+      return true;
+    })
+    .map((c) => {
     let company = c;
     if (!STANCES.includes(company.stance)) {
       // 归为字符串 'unknown'，而不是 'neutral'——'neutral' 应该只表示

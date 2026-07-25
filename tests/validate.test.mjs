@@ -321,3 +321,97 @@ test('回归保护：quotes 内的原始字符串元素仍被安全丢弃，不�
   }).not.toThrow();
   expect(result.clean.quotes).toEqual([]);
 });
+
+// ---- 补丁三：companies 整条校验 ----
+// companies 之前只对 stance/symbol 做单字段修复，从不整条丢弃非法元素。
+// typeof [] === 'object'，所以数组元素能绕过 isDroppableElement 的检查，
+// 被当成"合法对象"塞进去做字段修复，产出带数字键、没有 name 的垃圾记录。
+// 这里要求：元素必须是非数组的普通对象，且 name 必须是非空字符串（trim 后非空），
+// 否则整条丢弃，不做修补。
+
+test('companies 元素是数组时整条丢弃并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [[1, 2, 3]], summary: 's', quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.companies).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 元素是空对象（无 name）时整条丢弃并告警', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{}], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies).toEqual([]);
+  expect(warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 元素有其它字段但缺 name 时整条丢弃并告警', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{ symbol: 'AAPL', stance: 'holds' }], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies).toEqual([]);
+  expect(warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 元素 name 为空字符串时整条丢弃并告警', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{ name: '', stance: 'holds' }], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies).toEqual([]);
+  expect(warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 元素 name 为纯空白时整条丢弃并告警', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{ name: '   ', stance: 'holds' }], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies).toEqual([]);
+  expect(warnings.length).toBeGreaterThan(0);
+});
+
+test('回归保护：合法公司记录原样保留，零告警', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{ name: '苹果', symbol: 'AAPL', stance: 'holds' }], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies).toEqual([{ name: '苹果', symbol: 'AAPL', stance: 'holds' }]);
+  expect(warnings).toEqual([]);
+});
+
+test('回归保护：非法 stance 仍归一化为 unknown 并告警，但记录保留（不因 stance 非法整条丢弃）', () => {
+  const { clean, warnings } = validateEnrichment(
+    { conv_id: '99', topics: [], companies: [{ name: '苹果', symbol: 'AAPL', stance: '强烈看好' }], summary: 's', quotes: [], substantive: true },
+    conv
+  );
+  expect(clean.companies.length).toBe(1);
+  expect(clean.companies[0].name).toBe('苹果');
+  expect(clean.companies[0].stance).toBe('unknown');
+  expect(warnings.some((w) => w.includes('stance'))).toBe(true);
+});
+
+test('一条合法 + 一条非法混在同一数组中，合法保留、非法丢弃', () => {
+  const { clean, warnings } = validateEnrichment(
+    {
+      conv_id: '99',
+      topics: [],
+      companies: [
+        { name: '苹果', symbol: 'AAPL', stance: 'holds' },
+        [1, 2, 3],
+      ],
+      summary: 's',
+      quotes: [],
+      substantive: true,
+    },
+    conv
+  );
+  expect(clean.companies).toEqual([{ name: '苹果', symbol: 'AAPL', stance: 'holds' }]);
+  expect(warnings.length).toBeGreaterThan(0);
+});
