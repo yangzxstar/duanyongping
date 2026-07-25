@@ -52,11 +52,9 @@ for (const t of topics) {
   );
 }
 
-// 公司索引：AI 标注 + conv.stocks 两路合并，名字过归一化，按 stance 分区。
-// 指数/ETF 不是公司，isInstrument 命中的分流进独立的 instruments.json。
-const { companies, instruments } = buildCompanyIndex(convs, enriched);
+// 公司索引：AI 标注 + conv.stocks 两路合并，名字过归一化，按 stance 分区
+const companies = buildCompanyIndex(convs, enriched);
 writeFileSync(join(SITE_DATA, 'companies.json'), JSON.stringify(companies));
-writeFileSync(join(SITE_DATA, 'instruments.json'), JSON.stringify(instruments));
 writeFileSync(join(SITE_DATA, 'overview.json'), JSON.stringify(overview));
 
 // 汇报
@@ -66,5 +64,5 @@ let shardMB = 0;
 for (const [, list] of shards) shardMB += Buffer.byteLength(JSON.stringify(list));
 console.log(`索引 ${index.length} 条，${idxMB} MB（精华 ${featured} 条，高赞阈值 ${likeThreshold}）`);
 console.log(`年份分片 ${shards.size} 个，合计 ${(shardMB / 1024 / 1024).toFixed(1)} MB`);
-console.log(`话题页 ${topics.length} 个，公司 ${Object.keys(companies).length} 家，指数/ETF ${Object.keys(instruments).length} 项`);
+console.log(`话题页 ${topics.length} 个，公司 ${Object.keys(companies).length} 家`);
 console.log(`写入 ${SITE_DATA}`);

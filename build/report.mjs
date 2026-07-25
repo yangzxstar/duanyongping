@@ -16,10 +16,6 @@ const topics = readdirSync(join(SITE_DATA, 'topics')).map((f) =>
 );
 const overview = JSON.parse(readFileSync(join(SITE_DATA, 'overview.json'), 'utf8'));
 const companies = JSON.parse(readFileSync(join(SITE_DATA, 'companies.json'), 'utf8'));
-const instrumentsPath = join(SITE_DATA, 'instruments.json');
-const instruments = existsSync(instrumentsPath)
-  ? JSON.parse(readFileSync(instrumentsPath, 'utf8'))
-  : {};
 
 console.log('══════ 阶段 A 数据质量报告 ══════\n');
 
@@ -62,20 +58,13 @@ console.log('\n── 公司维度 ──');
 // stance 有五种合法取值：holds/admires/criticizes/neutral/unknown。
 // unknown 是校验器归一化出来的"模型输出了不认识的 stance"，理论上应恒为 0——
 // 从 CLEAN_STANCES 常量遍历而不是手写字面量，避免这里和 validate.mjs 的定义脱节。
-//
-// 指数/ETF 不是公司（用户明确要求），buildCompanyIndex 已把它们分流进
-// instruments.json，这里公司和指数/ETF 分两节展示，不再混算。
-function toRows(dict) {
-  return Object.values(dict)
-    .map((c) => {
-      const row = { name: c.name };
-      for (const s of CLEAN_STANCES) row[s] = (c[s] || []).length;
-      return row;
-    })
-    .sort((a, b) => CLEAN_STANCES.reduce((sum, s) => sum + b[s] - a[s], 0));
-}
-
-const rows = toRows(companies);
+const rows = Object.values(companies)
+  .map((c) => {
+    const row = { name: c.name };
+    for (const s of CLEAN_STANCES) row[s] = (c[s] || []).length;
+    return row;
+  })
+  .sort((a, b) => CLEAN_STANCES.reduce((sum, s) => sum + b[s] - a[s], 0));
 for (const r of rows) {
   console.log(`  ${r.name}: ${CLEAN_STANCES.map((s) => `${s} ${r[s]}`).join(' / ')}`);
 }
@@ -86,13 +75,6 @@ console.log(`  stance 分布：${CLEAN_STANCES.map((s) => `${s} ${stanceTotals[s
 if (stanceTotals.unknown > 0) {
   console.log(`  ⚠ unknown 应恒为 0，出现 ${stanceTotals.unknown}，说明有模型输出了非法 stance 未被拦下`);
 }
-
-console.log('\n── 指数/ETF 维度 ──');
-const instrumentRows = toRows(instruments);
-for (const r of instrumentRows) {
-  console.log(`  ${r.name}: ${CLEAN_STANCES.map((s) => `${s} ${r[s]}`).join(' / ')}`);
-}
-console.log(`\n  指数/ETF 总数 ${instrumentRows.length}`);
 
 // 核心持仓被标 criticizes —— 这是「需人工复核项」，不是硬红线。
 // 持有一家公司与批评它某个具体行为完全可以并存（已复核的实例见下方），

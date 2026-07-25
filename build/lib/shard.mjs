@@ -1,4 +1,4 @@
-import { COMPANY_KEYWORDS, matchesKeyword, isInstrument } from './taxonomy.mjs';
+import { COMPANY_KEYWORDS, matchesKeyword } from './taxonomy.mjs';
 import { CLEAN_STANCES } from './validate.mjs';
 
 // 精华 = AI 认为有实质内容，且满足任一结构信号。
@@ -114,18 +114,13 @@ export function likeThreshold(convs, pct = 0.1) {
 //      undefined 上崩溃（enrich-merge 补的默认标注是绕过 validate 构造的，
 //      不能假定 stance 一定已经归一化过）；
 //   6. 容器用 Object.create(null)，避免出现名为 constructor / __proto__ 的公司时
-//      走进原型链上的假分支；
-//   7. 指数/ETF 不是公司（用户明确要求）：canonicalCompanyName 之后过
-//      isInstrument(canon, symbol)，命中的分流进独立的 instruments 容器，
-//      与 companies 同样的 stance 分桶格式，但不混进 companies——内容本身
-//      （如批评三倍杠杆 ETF）仍保留，只是不出现在公司维度里。
+//      走进原型链上的假分支。
 export function buildCompanyIndex(convs, enriched) {
   const companies = Object.create(null);
-  const instruments = Object.create(null);
-  const byFoldCompanies = new Map(); // 小写名 → 实际使用的键
-  const byFoldInstruments = new Map();
+  const byFold = new Map(); // 小写名 → 实际使用的键
 
-  const bucketIn = (container, byFold, canon) => {
+  const bucketOf = (rawName) => {
+    const canon = canonicalCompanyName(rawName);
     const fold = canon.toLowerCase();
     let key = byFold.get(fold);
     if (key === undefined) {
@@ -133,23 +128,16 @@ export function buildCompanyIndex(convs, enriched) {
       byFold.set(fold, key);
       const rec = { name: canon };
       for (const s of CLEAN_STANCES) rec[s] = [];
-      container[key] = rec;
+      companies[key] = rec;
     }
-    return container[key];
-  };
-
-  const bucketFor = (rawName, symbol) => {
-    const canon = canonicalCompanyName(rawName);
-    return isInstrument(canon, symbol)
-      ? bucketIn(instruments, byFoldInstruments, canon)
-      : bucketIn(companies, byFoldCompanies, canon);
+    return companies[key];
   };
 
   for (const c of convs) {
-    const seen = new Set(); // 本场已定桶的公司/指数（用展示名）
+    const seen = new Set(); // 本场已定桶的公司（用展示名）
     for (const co of enriched?.[c.id]?.companies || []) {
       if (!co || typeof co.name !== 'string' || co.name.trim().length === 0) continue;
-      const rec = bucketFor(co.name, co.symbol);
+      const rec = bucketOf(co.name);
       if (seen.has(rec.name)) continue;
       seen.add(rec.name);
       const stance = CLEAN_STANCES.includes(co.stance) ? co.stance : 'unknown';
@@ -157,12 +145,12 @@ export function buildCompanyIndex(convs, enriched) {
     }
     for (const s of c.stocks || []) {
       if (!s || typeof s.name !== 'string' || s.name.trim().length === 0) continue;
-      const rec = bucketFor(s.name, s.symbol);
+      const rec = bucketOf(s.name);
       if (seen.has(rec.name)) continue;
       seen.add(rec.name);
       rec.neutral.push(c.id);
     }
   }
 
-  return { companies, instruments };
+  return companies;
 }

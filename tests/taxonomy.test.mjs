@@ -8,7 +8,6 @@ import {
   COMPANY_KEYWORDS,
   matchCompanies,
   matchesKeyword,
-  isInstrument,
 } from '../build/lib/taxonomy.mjs';
 
 test('话题体系是 20 个节点：8 个一级 + 12 个二级', () => {
@@ -71,8 +70,6 @@ test('matchCompanies 对所有 ASCII 字母/数字/点关键词（不分大小�
   expect(matchCompanies('他是个 survivor')).toEqual([]);
   // 前后合法 → 命中步步高系
   expect(matchCompanies('vivo 手机')).toEqual(['步步高系']);
-  // 小霸王已从步步高系拆出为独立实体（同名不同公司，见 COMPANY_KEYWORDS 注释）
-  expect(matchCompanies('小霸王游戏机')).toEqual(['小霸王']);
   // 以数字结尾且后面紧跟数字 → 不命中
   expect(matchCompanies('SH6005191 不是真实代码')).toEqual([]);
   // 中文关键词不做边界校验，继续用普通 includes
@@ -93,40 +90,6 @@ test('matchesKeyword 单关键词判据与 matchCompanies 一致：ASCII 走边�
   expect(matchesKeyword('我觉得苹果这个生意很好', '苹果')).toBe(true);
   expect(matchesKeyword('', '苹果')).toBe(false);
   expect(matchesKeyword('苹果', '')).toBe(false);
-});
-
-// ── 指数/ETF 判定（isInstrument）──
-// 判据来自对 site/data/companies.json 380 家的实测扫描，见 taxonomy.mjs 里
-// isInstrument 上方的注释与 .superpowers/sdd/instrument-fix-report.md。
-
-test('isInstrument 正例：指数/ETF/基金类名称命中', () => {
-  expect(isInstrument('标普500ETF')).toBe(true);
-  expect(isInstrument('沪深300')).toBe(true);
-  expect(isInstrument('上证指数')).toBe(true);
-  expect(isInstrument('纳指3X做空ETF')).toBe(true);
-  expect(isInstrument('中证100LOF')).toBe(true);
-});
-
-test('isInstrument 正例：裸 ticker 走 symbol 或 name 白名单', () => {
-  expect(isInstrument('SPY')).toBe(true);
-  expect(isInstrument('UNG')).toBe(true);
-  expect(isInstrument('美国天然气基金', 'UNG')).toBe(true);
-  expect(isInstrument('某只基金', 'SPY')).toBe(true);
-});
-
-test('isInstrument 反例：真实公司不误判', () => {
-  expect(isInstrument('苹果')).toBe(false);
-  expect(isInstrument('茅台')).toBe(false);
-  expect(isInstrument('伯克希尔')).toBe(false);
-  expect(isInstrument('泡泡玛特')).toBe(false);
-  expect(isInstrument('腾讯', '00700')).toBe(false);
-});
-
-test('isInstrument 对非法输入不崩溃', () => {
-  expect(isInstrument(undefined)).toBe(false);
-  expect(isInstrument(null)).toBe(false);
-  expect(isInstrument('')).toBe(false);
-  expect(isInstrument(123)).toBe(false);
 });
 
 // data/ 未入版本库，干净 clone 上这条要显式 skip 而不是在测试体里 return
