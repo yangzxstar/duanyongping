@@ -1,0 +1,18 @@
+{
+  "name": "duanyongping-xueqiu",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "login": "bun scraper/login.mjs",
+    "scrape": "bun scraper/scrape.mjs",
+    "merge": "bun scraper/merge.mjs",
+    "backfill": "bun scraper/backfill.mjs",
+    "normalize": "bun build/normalize.mjs",
+    "stats": "bun build/stats.mjs",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "playwright": "1.52.0"
+  }
+}
