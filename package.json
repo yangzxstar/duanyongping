@@ -10,6 +10,7 @@
     "backfill": "bun scraper/backfill.mjs",
     "normalize": "bun build/normalize.mjs",
     "stats": "bun build/stats.mjs",
+    "auto": "bun scraper/await-login-and-run.mjs",
     "test": "bun test"
   },
   "dependencies": {
