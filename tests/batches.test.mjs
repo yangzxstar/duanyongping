@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test';
-import { toAiPayload, splitBatches, batchFileName, missingBatches } from '../build/lib/batches.mjs';
+import { toAiPayload, splitBatches, batchFileName, missingBatches, isEmptyPayload } from '../build/lib/batches.mjs';
 
 const conv = {
   id: '99',
@@ -60,4 +60,35 @@ test('batchFileName 三位补零', () => {
 test('missingBatches 找出未完成的批次', () => {
   expect(missingBatches(5, [1, 3, 5])).toEqual([2, 4]);
   expect(missingBatches(3, [1, 2, 3])).toEqual([]);
+});
+
+test('isEmptyPayload 判定 posts 全空且 root 为 null 的对话为空内容', () => {
+  const empty = {
+    id: 'solo-1',
+    kind: 'original',
+    first_at: '2020-01-01T00:00:00.000Z',
+    root: null,
+    posts: [{ id: 1, own_text: '', stats: {} }],
+  };
+  expect(isEmptyPayload(toAiPayload(empty))).toBe(true);
+});
+
+test('isEmptyPayload 对 posts 全空但 root_question 有实质内容的对话判定为非空', () => {
+  const c = {
+    id: '113693907-like',
+    kind: 'thread',
+    first_at: '2021-01-01T00:00:00.000Z',
+    root: { id: 1, user: '苹果(AAPL)', text_plain: '苹果这个生意未来十年会怎样' },
+    posts: [{ id: 2, own_text: '', stats: {} }],
+  };
+  expect(isEmptyPayload(toAiPayload(c))).toBe(false);
+});
+
+test('isEmptyPayload 对正常对话判定为非空', () => {
+  expect(isEmptyPayload(toAiPayload(conv))).toBe(false);
+});
+
+test('splitBatches 与 missingBatches 处理空输入边界', () => {
+  expect(splitBatches([], 40)).toEqual([]);
+  expect(missingBatches(0, [])).toEqual([]);
 });

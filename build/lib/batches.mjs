@@ -19,6 +19,20 @@ export function toAiPayload(conv) {
   };
 }
 
+// 雪球对"原贴被删"场景会把 root 文本填成这类占位语，本身不含可标注信息。
+const EMPTY_ROOT_PLACEHOLDERS = new Set(['原帖已删除', '原帖已被作者删除']);
+
+// posts 全空、且没有可供 AI 判断的 root_question（null / 空白 / 删帖占位）时，
+// 这场对话除了时间和类型之外没有任何内容，应在切批前排除。
+export function isEmptyPayload(payload) {
+  if (payload.posts.length > 0) return false;
+  const rq = payload.root_question;
+  if (rq == null) return true;
+  const trimmed = rq.trim();
+  if (trimmed.length === 0) return true;
+  return EMPTY_ROOT_PLACEHOLDERS.has(trimmed);
+}
+
 export function splitBatches(convs, size) {
   const out = [];
   for (let i = 0; i < convs.length; i += size) {
