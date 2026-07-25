@@ -1,5 +1,13 @@
 import { test, expect } from 'bun:test';
-import { isFeatured, buildIndexEntry, buildYearShards, topicSlug } from '../build/lib/shard.mjs';
+import {
+  isFeatured,
+  buildIndexEntry,
+  buildYearShards,
+  topicSlug,
+  canonicalCompanyName,
+  buildCompanyIndex,
+  likeThreshold,
+} from '../build/lib/shard.mjs';
 
 const base = {
   id: '99', kind: 'thread', first_at: '2024-05-01T03:00:00.000Z', last_at: '2024-05-01T04:00:00.000Z',
@@ -71,4 +79,149 @@ test('年份分片按首条时间归年，正文只留净文本与对话链', ()
 test('topicSlug 把话题路径转成文件名安全的 slug', () => {
   expect(topicSlug('投资理念/能力圈')).toBe('投资理念-能力圈');
   expect(topicSlug('投机批判')).toBe('投机批判');
+});
+
+// ── 公司名归一化（canonicalCompanyName）──
+
+test('canonicalCompanyName 把 AI 写的别名收到 COMPANY_KEYWORDS 的规范键', () => {
+  expect(canonicalCompanyName('贵州茅台')).toBe('茅台');
+  expect(canonicalCompanyName('茅台')).toBe('茅台');
+  expect(canonicalCompanyName('腾讯控股')).toBe('腾讯');
+  expect(canonicalCompanyName('腾讯控股ADR')).toBe('腾讯');
+  expect(canonicalCompanyName('伯克希尔-哈撒韦B')).toBe('伯克希尔');
+  expect(canonicalCompanyName('谷歌C')).toBe('谷歌');
+  expect(canonicalCompanyName('阿里巴巴-W')).toBe('阿里巴巴');
+});
+
+test('canonicalCompanyName 认代码与别名，且 ASCII 关键词仍走边界校验', () => {
+  expect(canonicalCompanyName('AAPL')).toBe('苹果');
+  expect(canonicalCompanyName('PDD')).toBe('拼多多');
+  expect(canonicalCompanyName('OPPO')).toBe('步步高系');
+  expect(canonicalCompanyName('vivo')).toBe('步步高系');
+  expect(canonicalCompanyName('OPPO/vivo')).toBe('步步高系');
+  // survivor 里的 vivo 前面是字母，边界校验拦下，不该被收成步步高系
+  expect(canonicalCompanyName('Survivor Corp')).toBe('Survivor Corp');
+});
+
+test('canonicalCompanyName 命中多个规范键时取匹配到的关键词更长的那个', () => {
+  // '小霸王'(3) 属于步步高系，'谷歌'(2) 属于谷歌 —— 更长者优先
+  expect(canonicalCompanyName('小霸王谷歌联名')).toBe('步步高系');
+  // '拼多多'(3) 比 '苹果'(2) 长
+  expect(canonicalCompanyName('苹果与拼多多')).toBe('拼多多');
+});
+
+test('canonicalCompanyName 没命中规范键就原样返回（长尾留到阶段 B）', () => {
+  expect(canonicalCompanyName('Palantir')).toBe('Palantir');
+  expect(canonicalCompanyName('海底捞')).toBe('海底捞');
+  expect(canonicalCompanyName('  可口可乐  ')).toBe('可口可乐');
+  expect(canonicalCompanyName(123)).toBe(123);
+  expect(canonicalCompanyName('')).toBe('');
+});
+
+// ── 公司索引（buildCompanyIndex）──
+
+const conv = (id, stocks = []) => ({ ...base, id, stocks });
+const enr2 = (companies) => ({ topics: [], companies, summary: '', quotes: [], substantive: true });
+
+test('buildCompanyIndex 把同一家公司的多种写法合并成一条', () => {
+  const convs = [conv('1'), conv('2'), conv('3')];
+  const enriched = {
+    1: enr2([{ name: '茅台', stance: 'holds' }]),
+    2: enr2([{ name: '贵州茅台', stance: 'holds' }]),
+    3: enr2([{ name: '茅台集团', stance: 'admires' }]),
+  };
+  const idx = buildCompanyIndex(convs, enriched);
+  expect(Object.keys(idx)).toEqual(['茅台']);
+  expect(idx['茅台'].holds).toEqual(['1', '2']);
+  expect(idx['茅台'].admires).toEqual(['3']);
+});
+
+test('buildCompanyIndex 对未归一的长尾名做大小写合并：Zara 与 ZARA 归一到同一条', () => {
+  const idx = buildCompanyIndex([conv('1'), conv('2')], {
+    1: enr2([{ name: 'Zara', stance: 'admires' }]),
+    2: enr2([{ name: 'ZARA', stance: 'neutral' }]),
+  });
+  expect(Object.keys(idx)).toEqual(['Zara']); // 展示名取先出现的写法
+  expect(idx['Zara'].admires).toEqual(['1']);
+  expect(idx['Zara'].neutral).toEqual(['2']);
+});
+
+test('buildCompanyIndex 五个桶齐全，非法 stance 兜到 unknown 而不是崩溃', () => {
+  const idx = buildCompanyIndex([conv('1'), conv('2'), conv('3')], {
+    1: enr2([{ name: '网易', stance: 'bullish' }]), // 不在 CLEAN_STANCES
+    2: enr2([{ name: '网易', stance: undefined }]),
+    3: enr2([{ name: '网易', stance: 'holds' }]),
+  });
+  expect(Object.keys(idx['网易']).sort()).toEqual(
+    ['admires', 'criticizes', 'holds', 'name', 'neutral', 'unknown'].sort()
+  );
+  expect(idx['网易'].unknown).toEqual(['1', '2']);
+  expect(idx['网易'].holds).toEqual(['3']);
+});
+
+test('buildCompanyIndex 对 __proto__ / constructor 这类公司名不崩溃', () => {
+  const idx = buildCompanyIndex([conv('1'), conv('2')], {
+    1: enr2([{ name: '__proto__', stance: 'neutral' }]),
+    2: enr2([{ name: 'constructor', stance: 'criticizes' }]),
+  });
+  expect(idx['__proto__'].neutral).toEqual(['1']);
+  expect(idx['constructor'].criticizes).toEqual(['2']);
+  expect(Object.keys(idx).sort()).toEqual(['__proto__', 'constructor']);
+});
+
+test('buildCompanyIndex 并入 conv.stocks，记为 neutral', () => {
+  const idx = buildCompanyIndex([conv('1', [{ symbol: '09992', name: '泡泡玛特' }])], {});
+  expect(idx['泡泡玛特'].neutral).toEqual(['1']);
+  expect(idx['泡泡玛特'].holds).toEqual([]);
+});
+
+test('buildCompanyIndex 中 AI 的 stance 优先于 stocks 带来的 neutral', () => {
+  const idx = buildCompanyIndex(
+    [conv('1', [{ symbol: 'SH600519', name: '贵州茅台' }])],
+    { 1: enr2([{ name: '茅台', stance: 'holds' }]) }
+  );
+  expect(idx['茅台'].holds).toEqual(['1']);
+  expect(idx['茅台'].neutral).toEqual([]);
+});
+
+test('buildCompanyIndex 同一场里同名公司只进一个桶，不重复计数', () => {
+  const idx = buildCompanyIndex([conv('1')], {
+    1: enr2([
+      { name: '腾讯', stance: 'holds' },
+      { name: '腾讯控股', stance: 'admires' },
+    ]),
+  });
+  expect(idx['腾讯'].holds).toEqual(['1']);
+  expect(idx['腾讯'].admires).toEqual([]);
+});
+
+test('buildCompanyIndex 丢弃缺 name 的脏元素，缺标注的对话不报错', () => {
+  const idx = buildCompanyIndex([conv('1'), conv('2')], {
+    1: enr2([{ stance: 'holds' }, { name: '   ', stance: 'holds' }, null]),
+  });
+  expect(Object.keys(idx)).toEqual([]);
+});
+
+// ── 高赞阈值（likeThreshold）──
+
+test('likeThreshold 空数组返回 0，不返回 undefined', () => {
+  expect(likeThreshold([])).toBe(0);
+  expect(likeThreshold(undefined)).toBe(0);
+});
+
+test('likeThreshold 单元素返回该元素赞数', () => {
+  expect(likeThreshold([{ stats: { like: 42 } }])).toBe(42);
+});
+
+test('likeThreshold 取降序分位数', () => {
+  const convs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => ({ stats: { like: n * 10 } }));
+  // 降序 [100..10]，floor(10*0.1)=1 → 第 2 高
+  expect(likeThreshold(convs, 0.1)).toBe(90);
+  expect(likeThreshold(convs, 0.5)).toBe(50);
+  // 分位数落到数组末尾之外时兜到最小值，不返回 undefined
+  expect(likeThreshold(convs, 1)).toBe(10);
+});
+
+test('likeThreshold 容忍缺失的 stats', () => {
+  expect(likeThreshold([{}, { stats: { like: 5 } }], 0.1)).toBe(5);
 });

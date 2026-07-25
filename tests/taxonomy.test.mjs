@@ -1,6 +1,14 @@
 import { test, expect } from 'bun:test';
 import { readFileSync, existsSync } from 'fs';
-import { TOPICS, TOPIC_PATHS, COMPANY_KEYWORDS, matchCompanies } from '../build/lib/taxonomy.mjs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import {
+  TOPICS,
+  TOPIC_PATHS,
+  COMPANY_KEYWORDS,
+  matchCompanies,
+  matchesKeyword,
+} from '../build/lib/taxonomy.mjs';
 
 test('话题体系是 20 个节点：8 个一级 + 12 个二级', () => {
   expect(TOPICS.length).toBe(20);
@@ -74,10 +82,22 @@ test('matchCompanies 显式识别 GOOGLE 别名，修复此前边界校验对全
   expect(matchCompanies('比GOOGLE要复杂很多')).toEqual(['谷歌']);
 });
 
-test('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
-  const PATH = '/Users/seal/duanyongping/data/normalized.json';
-  if (!existsSync(PATH)) return;
-  const rs = JSON.parse(readFileSync(PATH, 'utf8'));
+test('matchesKeyword 单关键词判据与 matchCompanies 一致：ASCII 走边界校验，中文走 includes', () => {
+  expect(matchesKeyword('AAPL 今天涨了', 'AAPL')).toBe(true);
+  expect(matchesKeyword('XAAPLY 不是一个真实代码', 'AAPL')).toBe(false);
+  expect(matchesKeyword('他是个 survivor', 'vivo')).toBe(false);
+  expect(matchesKeyword('vivo 手机', 'vivo')).toBe(true);
+  expect(matchesKeyword('我觉得苹果这个生意很好', '苹果')).toBe(true);
+  expect(matchesKeyword('', '苹果')).toBe(false);
+  expect(matchesKeyword('苹果', '')).toBe(false);
+});
+
+// data/ 未入版本库，干净 clone 上这条要显式 skip 而不是在测试体里 return
+// （return 会被报告成"通过"，把"根本没跑"伪装成"断言全过"）。
+const CORPUS = join(dirname(fileURLToPath(import.meta.url)), '..', 'data', 'normalized.json');
+
+test.skipIf(!existsSync(CORPUS))('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
+  const rs = JSON.parse(readFileSync(CORPUS, 'utf8'));
   const tagged = rs.filter((r) => r.stocks.length > 0).length;
   const matched = rs.filter((r) => matchCompanies(r.own_text || r.text_plain).length > 0).length;
   // 实测：标签 387 条(3.6%)，关键词 1561 条(14.36%)

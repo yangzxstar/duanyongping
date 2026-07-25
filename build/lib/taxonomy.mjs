@@ -78,14 +78,21 @@ function includesWithBoundary(text, keyword) {
   }
 }
 
+// 单个关键词的匹配判据（ASCII 关键词走边界校验，中文关键词走 includes）。
+// 导出出去是因为下游（公司名归一化）需要知道"命中的是哪一个关键词"来做
+// 长度优先的消歧，不能只拿到 matchCompanies 的规范名列表。
+export function matchesKeyword(text, keyword) {
+  if (!text || !keyword) return false;
+  return ASCII_KEYWORD_RE.test(keyword)
+    ? includesWithBoundary(text, keyword)
+    : text.includes(keyword);
+}
+
 export function matchCompanies(text) {
   if (!text) return [];
   const hit = new Set();
   for (const [name, keys] of Object.entries(COMPANY_KEYWORDS)) {
-    const matched = keys.some((k) =>
-      ASCII_KEYWORD_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
-    );
-    if (matched) hit.add(name);
+    if (keys.some((k) => matchesKeyword(text, k))) hit.add(name);
   }
   return [...hit];
 }
