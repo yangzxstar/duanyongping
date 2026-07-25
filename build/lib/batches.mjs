@@ -5,7 +5,7 @@ import { matchCompanies } from './taxonomy.mjs';
 export function toAiPayload(conv) {
   const posts = conv.posts
     .map((p) => ({ post_id: p.id, text: p.own_text || '' }))
-    .filter((p) => p.text.length > 0);
+    .filter((p) => p.text.trim().length > 0);
 
   const allText = [conv.root?.text_plain || '', ...posts.map((p) => p.text)].join('\n');
 

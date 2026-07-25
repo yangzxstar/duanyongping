@@ -92,3 +92,14 @@ test('splitBatches 与 missingBatches 处理空输入边界', () => {
   expect(splitBatches([], 40)).toEqual([]);
   expect(missingBatches(0, [])).toEqual([]);
 });
+
+test('isEmptyPayload 判定 root_question 为已知删帖占位语的对话为空内容', () => {
+  expect(isEmptyPayload({ posts: [], root_question: '原帖已删除' })).toBe(true);
+  expect(isEmptyPayload({ posts: [], root_question: '原帖已被作者删除' })).toBe(true);
+});
+
+test('toAiPayload 过滤纯空白（非空字符串）的 own_text', () => {
+  const c = { ...conv, posts: [{ id: 1, own_text: '   \n\t  ', stats: {} }] };
+  const p = toAiPayload(c);
+  expect(p.posts).toEqual([]);
+});
