@@ -31,6 +31,12 @@ export const TOPIC_PATHS = new Set(TOPICS.map((t) => t.path));
 
 // 公司维度：只有 3.6% 的发言带可解析标签，绝大多数是直接写公司名，
 // 所以必须用关键词补。实测覆盖率因此从 3.6% 提到 14.9%。
+//
+// 「小霸王」独立成条，不并入「步步高系」：段永平早年经营过小霸王，但语料里
+// 2020 年后出现的「小霸王」指的是另一家借用了这个名字的游戏机公司（他在
+// conv 155952478 里明确撇清关系：那家公司成了被执行人，他不认识背后的
+// "领先科技有限公司"）。两者是同名不同实体，合并会把针对那家陌生公司的
+// 负面评价张冠李戴算到步步高系（他的核心持仓）头上。
 export const COMPANY_KEYWORDS = {
   苹果: ['苹果', 'AAPL', 'iPhone', '库克', '乔布斯'],
   茅台: ['茅台', 'SH600519'],
@@ -45,7 +51,8 @@ export const COMPANY_KEYWORDS = {
   网易: ['网易', 'NTES', '丁磊'],
   游戏驿站: ['游戏驿站', 'GME'],
   Moderna: ['Moderna', 'MRNA'],
-  '步步高系': ['步步高', 'OPPO', 'vivo', '小霸王'],
+  '步步高系': ['步步高', 'OPPO', 'vivo'],
+  小霸王: ['小霸王'],
 };
 
 // 由 ASCII 字母/数字/点组成的关键词（不论大小写，如 '00700'、'AAPL'、'BRK.B'、
@@ -95,4 +102,39 @@ export function matchCompanies(text) {
     if (keys.some((k) => matchesKeyword(text, k))) hit.add(name);
   }
   return [...hit];
+}
+
+// ── 指数/ETF 判定（isInstrument）──────────────────────────────────────────
+// 用户明确要求：指数和 ETF 不是公司，不能混进公司维度索引，但内容本身有价值
+// （如批评三倍杠杆 ETF 的发言），要分流到独立的 instruments 维度，不能丢弃。
+//
+// 判据不是凭空定的，是先写一次性脚本扫描 site/data/companies.json 当时的
+// 380 个公司名，把实际命中的指数/ETF 列出来后归纳的三类判据：
+//   1. 名称包含基金类关键词：ETF / 指数 / 基金 / LOF / ETN / REIT
+//      （命中：标普500ETF、纳指ETF、标普500指数、上证指数、纳斯达克综合指数、
+//       纳指3X做空ETF、美国天然气ETF、美国天然气价ETF(UNG)、美国天然气基金、
+//       三倍杠杆基金、方舟投资（木头姐基金）——symbol 为 ARKK，语境是拿她的
+//       基金和巴菲特对比，非指某家实体运营公司）；
+//   2. 名称匹配常见指数简称：上证/深证/创业板/沪深300/中证/恒生/标普/纳指/
+//      纳斯达克/道琼斯/罗素（命中：沪深300、中证100、上证50、纳指3X做空-
+//      ProShares，这几个不含"指数/ETF"字样但本身就是指数简称或指数类产品名）；
+//   3. 名称或 symbol 命中已知的裸 ticker 白名单（命中：SPY、UNG——语料里这两
+//      个是不带任何"ETF/指数/基金"字样的裸代码，前两条判据兜不住，只能靠
+//      白名单认）。白名单只收录扫描中实际出现过的，不做未验证的扩充猜测。
+const INSTRUMENT_NAME_KEYWORDS = ['ETF', '指数', '基金', 'LOF', 'ETN', 'REIT'];
+const INSTRUMENT_NAME_PATTERNS = [
+  '上证', '深证', '创业板', '沪深300', '中证', '恒生', '标普', '纳指', '纳斯达克', '道琼斯', '罗素',
+];
+const INSTRUMENT_TICKERS = new Set(['SPY', 'UNG']);
+
+export function isInstrument(name, symbol) {
+  const n = typeof name === 'string' ? name.trim() : '';
+  const s = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
+  if (n) {
+    if (INSTRUMENT_NAME_KEYWORDS.some((k) => n.includes(k))) return true;
+    if (INSTRUMENT_NAME_PATTERNS.some((k) => n.includes(k))) return true;
+    if (INSTRUMENT_TICKERS.has(n.toUpperCase())) return true;
+  }
+  if (s && INSTRUMENT_TICKERS.has(s)) return true;
+  return false;
 }
