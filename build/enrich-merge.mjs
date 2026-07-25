@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { DATA_DIR } from '../scraper/lib/progress.mjs';
 import { missingBatches } from './lib/batches.mjs';
-import { validateEnrichment } from './lib/validate.mjs';
+import { mergeBatchResults, addEmptyConvDefaults } from './lib/merge.mjs';
 
 const TOTAL_BATCHES = 130;
 
@@ -48,69 +48,28 @@ const convs = JSON.parse(readFileSync(convsPath, 'utf8'));
 const convMap = new Map(convs.map((c) => [c.id, c]));
 
 // ---- 3. 逐批读取、逐条校验、合并 ----
-const enriched = {};
-const warnings = [];
-let mergedResultCount = 0;
-let orphanCount = 0;
-let duplicateCount = 0;
-
+const batches = [];
 for (let n = 1; n <= TOTAL_BATCHES; n++) {
   const fileName = `batch-${String(n).padStart(3, '0')}.json`;
-  const filePath = join(outDir, fileName);
-  const raw = JSON.parse(readFileSync(filePath, 'utf8'));
-  const results = Array.isArray(raw.results) ? raw.results : [];
-  if (!Array.isArray(raw.results)) {
-    warnings.push(`[${fileName}] 顶层 results 不是数组，本批按 0 条处理`);
-  }
-
-  for (const entry of results) {
-    mergedResultCount++;
-    const idCandidate = entry && typeof entry === 'object' ? entry.conv_id : undefined;
-    const conv = idCandidate !== undefined ? convMap.get(idCandidate) : undefined;
-
-    if (!conv) {
-      orphanCount++;
-      warnings.push(
-        `[${fileName}] 孤儿标注：conv_id ${JSON.stringify(idCandidate)} 不存在于 conversations.json，已丢弃`
-      );
-      continue;
-    }
-
-    const { clean, warnings: w } = validateEnrichment(entry, conv);
-    warnings.push(...w);
-
-    if (Object.prototype.hasOwnProperty.call(enriched, clean.conv_id)) {
-      duplicateCount++;
-      warnings.push(`conv_id ${clean.conv_id} 出现多条标注（跨批重复），以最后一条为准`);
-    }
-    enriched[clean.conv_id] = clean;
-  }
+  const raw = JSON.parse(readFileSync(join(outDir, fileName), 'utf8'));
+  batches.push({ label: fileName, results: raw.results });
 }
+
+const {
+  enriched,
+  warnings,
+  stats: { mergedResultCount, orphanCount, duplicateCount },
+} = mergeBatchResults(batches, convMap);
 
 // ---- 4. 补空内容对话的默认标注 ----
 const emptyIds = JSON.parse(readFileSync(emptyConvsPath, 'utf8'));
-let emptyMissingCount = 0;
-
-for (const id of emptyIds) {
-  if (!convMap.has(id)) {
-    emptyMissingCount++;
-    warnings.push(`空内容对话 id ${id} 不存在于 conversations.json，数据不一致`);
-    continue;
-  }
-  if (Object.prototype.hasOwnProperty.call(enriched, id)) {
-    warnings.push(
-      `空内容对话 id ${id} 意外已在 AI 批次结果中出现标注，仍以默认空标注覆盖`
-    );
-  }
-  enriched[id] = {
-    conv_id: id,
-    topics: [],
-    companies: [],
-    summary: '',
-    quotes: [],
-    substantive: false,
-  };
-}
+const { added: emptyAdded, warnings: emptyWarnings } = addEmptyConvDefaults(
+  enriched,
+  emptyIds,
+  convMap
+);
+warnings.push(...emptyWarnings);
+const emptyMissingCount = emptyIds.length - emptyAdded;
 
 // ---- 5. 写出产物 ----
 writeFileSync(enrichedPath, JSON.stringify(enriched, null, 1));
