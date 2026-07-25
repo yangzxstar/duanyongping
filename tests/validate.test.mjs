@@ -178,3 +178,146 @@ test('ENRICH_SCHEMA 限定 stance 取值', () => {
   const stance = ENRICH_SCHEMA.properties.results.items.properties.companies.items.properties.stance;
   expect(stance.enum.sort()).toEqual(['admires', 'criticizes', 'holds', 'neutral']);
 });
+
+// ---- 补丁二：畸形输入加固 ----
+// 同一类崩溃隐患：真值但类型不对（非数组/非字符串）、数组里混入 null/undefined。
+// 原则：这个模块永远不应该因为输入畸形而 throw，任何畸形输入都应该被清洗掉 + 记入 warnings。
+
+test('quotes 为字符串（非数组）时不抛异常，按空数组处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: 's', quotes: 'not-an-array', substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.quotes).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('quotes 为单个对象（非数组）时不抛异常，按空数组处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: 's', quotes: { text: 'x', post_id: 100 }, substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.quotes).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('topics 为字符串（非数组）时不抛异常，按空数组处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: 'not-an-array', companies: [], summary: 's', quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.topics).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 为单个对象（非数组）时不抛异常，按空数组处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: { name: '苹果', symbol: null, stance: 'holds' }, summary: 's', quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.companies).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('topics 数组内混入 null 时不抛异常，该元素被丢弃并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [null], companies: [], summary: 's', quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.topics).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('companies 数组内混入 null 时不抛异常，该元素被丢弃并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [null], summary: 's', quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.companies).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('quotes 数组内混入 null 和 undefined 时不抛异常，均被丢弃并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: 's', quotes: [null, undefined], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.quotes).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('summary 为数字时不抛异常，按空字符串处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: 12345, quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.summary).toBe('');
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('summary 为对象时不抛异常，按空字符串处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: { x: 1 }, quotes: [], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.summary).toBe('');
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('entry 本身为 null 时不抛异常，按空标注处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(null, conv);
+  }).not.toThrow();
+  expect(result.clean.topics).toEqual([]);
+  expect(result.clean.companies).toEqual([]);
+  expect(result.clean.quotes).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('entry 本身为 undefined 时不抛异常，按空标注处理并告警', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(undefined, conv);
+  }).not.toThrow();
+  expect(result.clean.topics).toEqual([]);
+  expect(result.warnings.length).toBeGreaterThan(0);
+});
+
+test('回归保护：quotes 内的原始字符串元素仍被安全丢弃，不崩溃', () => {
+  let result;
+  expect(() => {
+    result = validateEnrichment(
+      { conv_id: '99', topics: [], companies: [], summary: 's', quotes: ['just a string'], substantive: true },
+      conv
+    );
+  }).not.toThrow();
+  expect(result.clean.quotes).toEqual([]);
+});

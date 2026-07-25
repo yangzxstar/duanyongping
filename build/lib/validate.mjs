@@ -66,11 +66,60 @@ function isValidConfidence(value) {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
+// topics/companies/quotes 本该是数组，但模型偶尔会返回字符串、单个对象等走样结果。
+// `|| []` 只兜得住 null/undefined，兜不住这些真值非数组——这里显式校验类型，
+// 不是数组就当空数组处理，并告警（模型返回非数组本身就是值得记录的异常，不该静默吞掉）。
+function ensureArray(value, id, field, warnings) {
+  if (Array.isArray(value)) return value;
+  if (value !== undefined && value !== null) {
+    warnings.push(
+      `[${id}] ${field} 应为数组，实际是 ${typeof value}（${JSON.stringify(value)}），已按空数组处理`
+    );
+  }
+  return [];
+}
+
+// 数组内的元素也可能被模型塞进 null/undefined 等非对象垃圾值，
+// 后续逻辑（如 t.path、c.stance、q.text）都要求元素是对象，先在这里统一拦截丢弃。
+function isDroppableElement(value) {
+  return typeof value !== 'object' || value === null;
+}
+
+function dropInvalidElements(list, id, field, warnings) {
+  return list.filter((item) => {
+    if (isDroppableElement(item)) {
+      warnings.push(`[${id}] ${field} 中存在非法元素（${JSON.stringify(item)}），已丢弃`);
+      return false;
+    }
+    return true;
+  });
+}
+
 export function validateEnrichment(entry, conv) {
   const warnings = [];
+
+  // entry 本身也可能是畸形的：AI 返回的 results 数组里混入 null/undefined/非对象
+  // 元素时，上游若直接透传每一项调用本函数，entry 会是 null/undefined/字符串等。
+  // 这是和 topics/companies/quotes 数组里混入 null 完全同类的失败模式（只是高了一层），
+  // 同样不该 throw，直接清洗成空标注并告警。
+  if (typeof entry !== 'object' || entry === null) {
+    warnings.push(`entry 不是合法对象（${typeof entry}），已按空标注处理`);
+    return {
+      clean: {
+        conv_id: undefined,
+        topics: [],
+        companies: [],
+        summary: '',
+        quotes: [],
+        substantive: false,
+      },
+      warnings,
+    };
+  }
+
   const id = entry.conv_id;
 
-  const topics = (entry.topics || [])
+  const topics = dropInvalidElements(ensureArray(entry.topics, id, 'topics', warnings), id, 'topics', warnings)
     .filter((t) => {
       if (TOPIC_PATHS.has(t.path)) return true;
       warnings.push(`[${id}] 话题不在体系内，已丢弃：${t.path}`);
@@ -84,7 +133,12 @@ export function validateEnrichment(entry, conv) {
       return { ...t, confidence: 0.5 };
     });
 
-  const companies = (entry.companies || []).map((c) => {
+  const companies = dropInvalidElements(
+    ensureArray(entry.companies, id, 'companies', warnings),
+    id,
+    'companies',
+    warnings
+  ).map((c) => {
     let company = c;
     if (!STANCES.includes(company.stance)) {
       // 归为字符串 'unknown'，而不是 'neutral'——'neutral' 应该只表示
@@ -103,28 +157,41 @@ export function validateEnrichment(entry, conv) {
   });
 
   const byPost = new Map(conv.posts.map((p) => [p.id, p.own_text || '']));
-  const quotes = (entry.quotes || []).filter((q) => {
-    // 先判空/判类型，必须在 includes() 之前：''.includes('') 恒为 true，
-    // 空字符串（或纯空白、非字符串）金句会被当成"逐字命中"直接放行，
-    // 这是杜撰校验最容易被绕过的洞，必须在这里先拦住。
-    if (typeof q.text !== 'string' || q.text.trim().length === 0) {
-      const preview = typeof q.text === 'string' ? q.text : JSON.stringify(q.text);
-      warnings.push(`[${id}] 金句为空或非法类型（疑似杜撰占位），已丢弃：${preview}`);
-      return false;
+  const quotes = dropInvalidElements(ensureArray(entry.quotes, id, 'quotes', warnings), id, 'quotes', warnings).filter(
+    (q) => {
+      // 先判空/判类型，必须在 includes() 之前：''.includes('') 恒为 true，
+      // 空字符串（或纯空白、非字符串）金句会被当成"逐字命中"直接放行，
+      // 这是杜撰校验最容易被绕过的洞，必须在这里先拦住。
+      if (typeof q.text !== 'string' || q.text.trim().length === 0) {
+        const preview = typeof q.text === 'string' ? q.text : JSON.stringify(q.text);
+        warnings.push(`[${id}] 金句为空或非法类型（疑似杜撰占位），已丢弃：${preview}`);
+        return false;
+      }
+      const text = byPost.get(q.post_id);
+      if (text === undefined) {
+        warnings.push(`[${id}] 金句引用了不属于本场的 post_id ${q.post_id}，已丢弃`);
+        return false;
+      }
+      if (!text.includes(q.text)) {
+        warnings.push(`[${id}] 金句非逐字原文（疑似杜撰），已丢弃：${q.text.slice(0, 30)}`);
+        return false;
+      }
+      return true;
     }
-    const text = byPost.get(q.post_id);
-    if (text === undefined) {
-      warnings.push(`[${id}] 金句引用了不属于本场的 post_id ${q.post_id}，已丢弃`);
-      return false;
-    }
-    if (!text.includes(q.text)) {
-      warnings.push(`[${id}] 金句非逐字原文（疑似杜撰），已丢弃：${q.text.slice(0, 30)}`);
-      return false;
-    }
-    return true;
-  });
+  );
 
-  if (!entry.summary || entry.summary.trim().length === 0) {
+  // summary 本该是字符串，但模型偶尔会返回数字、对象等走样结果——真值非字符串同样
+  // 会在 .trim() 上崩溃，这里先归一化为字符串（非法值按空字符串处理并告警），
+  // 再走"summary 为空"的既有告警逻辑。
+  let summary = entry.summary;
+  if (summary !== undefined && summary !== null && typeof summary !== 'string') {
+    warnings.push(
+      `[${id}] summary 不是字符串（${typeof summary}，${JSON.stringify(summary)}），已按空字符串处理`
+    );
+    summary = '';
+  }
+
+  if (!summary || summary.trim().length === 0) {
     warnings.push(`[${id}] summary 为空`);
   }
 
@@ -133,7 +200,7 @@ export function validateEnrichment(entry, conv) {
       conv_id: id,
       topics,
       companies,
-      summary: (entry.summary || '').trim(),
+      summary: (summary || '').trim(),
       quotes,
       substantive: !!entry.substantive,
     },
