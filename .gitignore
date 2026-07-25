@@ -1,4 +1,5 @@
 scraper/.profile/
 node_modules/
-data/raw/
+# 抓取产物：体量大、可由脚本完整重建，且是他人的公开内容——先不入版本库
+data/
 .DS_Store
