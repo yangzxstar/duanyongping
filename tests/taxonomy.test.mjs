@@ -56,6 +56,23 @@ test('纯数字/字母数字关键词加边界校验，避免子串误命中', (
   expect(matchCompanies('XAAPLY 不是一个真实代码')).toEqual([]);
 });
 
+test('混合大小写品牌名（如 iPhone+数字型号）不套边界校验，正常命中', () => {
+  // 回归：iPhone13 / iPhone5 是正常的品牌+型号写法，必须命中苹果
+  expect(matchCompanies('iPhone13 销量不错')).toEqual(['苹果']);
+  expect(matchCompanies('iPhone5')).toEqual(['苹果']);
+});
+
+test('证券代码（纯大写字母/数字/点）仍要求边界校验，不因品牌名放宽而失效', () => {
+  // 更长数字串包含 00700 子串，不应误命中腾讯
+  expect(matchCompanies('这个项目今年花了1007000元预算')).toEqual([]);
+  // 更长字母串包含 AAPL 子串，不应误命中苹果
+  expect(matchCompanies('XAAPLY 不是一个真实代码')).toEqual([]);
+  // GOOGLE 包含 GOOG 子串，不应误命中谷歌
+  expect(matchCompanies('GOOGLE 不是股票代码')).toEqual([]);
+  // 真实代码带边界仍要命中
+  expect(matchCompanies('$腾讯控股(00700)$ 微信生态很强')).toEqual(['腾讯']);
+});
+
 test('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
   const PATH = '/Users/seal/duanyongping/data/normalized.json';
   if (!existsSync(PATH)) return;

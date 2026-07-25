@@ -48,11 +48,13 @@ export const COMPANY_KEYWORDS = {
   '步步高系': ['步步高', 'OPPO', 'vivo', '小霸王'],
 };
 
-// 纯 ASCII 字母数字关键词（如代码 '00700'、'AAPL'）用 includes 做子串匹配会误命中
-// 更长的数字/字母串（如 "1007000" 误中 "00700"）。中文关键词没有词边界概念，
-// 仍用原始 includes；只对纯 ASCII 字母数字关键词加边界校验：命中位置前后一个
-// 字符不能是 ASCII 字母或数字（括号、$、空格、中文字符等都算合法边界）。
-const ASCII_ALNUM_RE = /^[A-Za-z0-9]+$/;
+// 形如证券代码的关键词（纯大写字母/数字/点，如 '00700'、'AAPL'、'BRK.B'）用
+// includes 做子串匹配会误命中更长的数字/字母串（如 "1007000" 误中 "00700"，
+// "GOOGLE" 误中 "GOOG"），所以需要边界校验：命中位置前后一个字符不能是 ASCII
+// 字母或数字（括号、$、空格、中文字符等都算合法边界）。
+// 混合大小写/小写的品牌名（如 'iPhone'、'Google'、'vivo'）不是证券代码，
+// 后面紧跟型号数字（iPhone13）是正常写法，不套边界校验，仍用原始 includes。
+const TICKER_RE = /^[A-Z0-9.]+$/;
 const isAsciiAlnum = (ch) => /[A-Za-z0-9]/.test(ch);
 
 function includesWithBoundary(text, keyword) {
@@ -72,7 +74,7 @@ export function matchCompanies(text) {
   const hit = new Set();
   for (const [name, keys] of Object.entries(COMPANY_KEYWORDS)) {
     const matched = keys.some((k) =>
-      ASCII_ALNUM_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
+      TICKER_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
     );
     if (matched) hit.add(name);
   }
