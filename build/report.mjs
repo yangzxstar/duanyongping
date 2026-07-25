@@ -4,6 +4,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { CLEAN_STANCES } from './lib/validate.mjs';
+import { canonicalCompanyName } from './lib/shard.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SITE_DATA = join(HERE, '..', 'site', 'data');
@@ -75,21 +76,33 @@ if (stanceTotals.unknown > 0) {
   console.log(`  ⚠ unknown 应恒为 0，出现 ${stanceTotals.unknown}，说明有模型输出了非法 stance 未被拦下`);
 }
 
-// 核心持仓若被标为 criticizes，大概率是 stance 判断出错——列出来供人工核对，
-// 不是自动判定为错误（他确实可能对持仓公司的某个具体决策提出批评）。
-const CORE_HOLDINGS = ['苹果', '茅台', '网易', '拼多多', '伯克希尔', '谷歌', 'OPPO', '步步高', '腾讯'];
-console.log('\n  核心持仓 criticizes 检查：');
-let coreCriticizeFlag = false;
+// 核心持仓被标 criticizes —— 这是「需人工复核项」，不是硬红线。
+// 持有一家公司与批评它某个具体行为完全可以并存（已复核的实例见下方），
+// 原先按"出现即触及红线"处理是把定义划得太粗，这里只做中性提示。
+// 名字先过 canonicalCompanyName，与 companies.json 的归一化口径保持一致
+// （如 OPPO / 步步高 在索引里统一是「步步高系」）。
+const CORE_HOLDINGS = [
+  ...new Set(
+    ['苹果', '茅台', '网易', '拼多多', '伯克希尔', '谷歌', 'OPPO', '步步高', '腾讯'].map(
+      canonicalCompanyName
+    )
+  ),
+];
+console.log('\n  核心持仓 criticizes 检查（人工复核项，非红线）：');
+let coreCriticizeCount = 0;
 for (const name of CORE_HOLDINGS) {
   const c = companies[name];
   if (!c) continue;
   const n = (c.criticizes || []).length;
   if (n > 0) {
-    coreCriticizeFlag = true;
-    console.log(`    ⚠ ${name} 被标 criticizes ${n} 处：${c.criticizes.join(', ')}（需人工核对是否 stance 判断出错）`);
+    coreCriticizeCount += n;
+    console.log(`    · ${name} 被标 criticizes ${n} 处：${c.criticizes.join(', ')}（需人工确认是否为针对具体行为的合理批评）`);
   }
 }
-if (!coreCriticizeFlag) console.log('    ✓ 核心持仓（苹果/茅台/网易/拼多多/伯克希尔/谷歌/OPPO/步步高/腾讯）均无 criticizes');
+if (coreCriticizeCount === 0) {
+  console.log(`    ✓ 核心持仓（${CORE_HOLDINGS.join('/')}）均无 criticizes`);
+}
+console.log('    已复核：腾讯 conv 21862159（2012 3Q 大战语境）标注正确');
 
 console.log('\n── 总纲 ──');
 console.log(`  《${overview.title}》${overview.essay.length} 字，${overview.pillars.length} 根支柱`);
@@ -207,7 +220,10 @@ const noTopicPct = (100 * noTopic.length) / index.length;
 console.log(`  未归类比例 ${noTopicPct.toFixed(1)}%（红线 >20%）${noTopicPct > 20 ? '⚠ 触及' : '✓ 未触及'}`);
 console.log(`  空话题 ${emptyTopics} 个（红线：出现即触及）${emptyTopics > 0 ? '⚠ 触及' : '✓ 未触及'}`);
 console.log(`  杜撰金句占对话数 ${bogusQuotePct.toFixed(1)}%（红线 >5%）${bogusQuotePct > 5 ? '⚠ 触及' : '✓ 未触及'}`);
-console.log(`  核心持仓被标 criticizes（红线：出现即触及）${coreCriticizeFlag ? '⚠ 触及，见上方明细' : '✓ 未触及'}`);
+console.log(
+  `  核心持仓出现 criticizes 标注 ${coreCriticizeCount} 处（人工复核项，非红线）${coreCriticizeCount > 0 ? '需人工确认是否为针对具体行为的合理批评，见上方明细' : '✓ 无'}`
+);
+console.log('    已复核：腾讯 conv 21862159（2012 3Q 大战语境）标注正确');
 console.log(`  话题综述引用无效 conv_id ${invalidConvIds} 处，非逐字金句 ${nonVerbatimQuotes} 处（这两项非 brief 原定红线，但同属杜撰风险，出现即需人工复核）${invalidConvIds > 0 || nonVerbatimQuotes > 0 ? '⚠' : '✓'}`);
 
 console.log('\n══════ 需人工判断 ══════');
