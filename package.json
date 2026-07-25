@@ -13,6 +13,7 @@
     "conversations": "bun build/conversations.mjs",
     "enrich:prepare": "bun build/enrich-prepare.mjs",
     "enrich:merge": "bun build/enrich-merge.mjs",
+    "topics:merge": "bun build/topics-merge.mjs",
     "shard": "bun build/shard.mjs",
     "report": "bun build/report.mjs",
     "auto": "bun scraper/await-login-and-run.mjs",
