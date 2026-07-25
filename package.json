@@ -11,6 +11,7 @@
     "normalize": "bun build/normalize.mjs",
     "stats": "bun build/stats.mjs",
     "conversations": "bun build/conversations.mjs",
+    "enrich:prepare": "bun build/enrich-prepare.mjs",
     "auto": "bun scraper/await-login-and-run.mjs",
     "qr": "bun scraper/qr-login-and-run.mjs",
     "test": "bun test"
