@@ -1,0 +1,4 @@
+scraper/.profile/
+node_modules/
+data/raw/
+.DS_Store
