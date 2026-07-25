@@ -11,9 +11,11 @@
     "normalize": "bun build/normalize.mjs",
     "stats": "bun build/stats.mjs",
     "auto": "bun scraper/await-login-and-run.mjs",
+    "qr": "bun scraper/qr-login-and-run.mjs",
     "test": "bun test"
   },
   "dependencies": {
-    "playwright": "1.52.0"
+    "playwright": "1.52.0",
+    "qrcode": "^1.5.4"
   }
 }

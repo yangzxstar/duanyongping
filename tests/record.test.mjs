@@ -47,3 +47,20 @@ test('char_count 统计的是纯文本长度', () => {
   const r = toRecord(byId(401883730));
   expect(r.char_count).toBe(r.text_plain.length);
 });
+
+test('规整记录带上完整对话语境', () => {
+  const r = toRecord(byId(401955822));
+  expect(r.conversation.root.user).toBe('为女儿攒嫁妆的爸爸');
+  expect(r.conversation.chain.length).toBeGreaterThanOrEqual(2);
+  expect(r.replying_to).toBe('__阿宝');
+  // own_text 只含本人的话，不含引用的他人内容
+  expect(r.own_text.length).toBeGreaterThan(0);
+  expect(r.own_text.length).toBeLessThan(r.text_plain.length);
+});
+
+test('原创发言的 own_text 等于正文本身', () => {
+  const r = toRecord(byId(401883730));
+  expect(r.conversation.root).toBe(null);
+  expect(r.replying_to).toBe(null);
+  expect(r.own_text).toBe(r.text_plain);
+});
