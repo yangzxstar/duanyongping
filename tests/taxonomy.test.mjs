@@ -44,6 +44,18 @@ test('matchCompanies 对无关文本返回空数组', () => {
   expect(matchCompanies('今天天气不错')).toEqual([]);
 });
 
+test('纯数字/字母数字关键词加边界校验，避免子串误命中', () => {
+  // 正常带代码的正文仍能命中（不能修过头）
+  expect(matchCompanies('$腾讯控股(00700)$ 微信生态很强')).toEqual(['腾讯']);
+  // 更长数字串包含 00700 子串，不应误命中
+  expect(matchCompanies('这个项目今年花了1007000元预算')).toEqual([]);
+  // 中文关键词不受影响，继续用 includes
+  expect(matchCompanies('我觉得苹果这个生意很好')).toEqual(['苹果']);
+  // 纯字母代码：边界内命中，边界外的更长字母串不命中
+  expect(matchCompanies('AAPL 今天涨了')).toEqual(['苹果']);
+  expect(matchCompanies('XAAPLY 不是一个真实代码')).toEqual([]);
+});
+
 test('关键词法在真实语料上的覆盖率显著高于纯标签', () => {
   const PATH = '/Users/seal/duanyongping/data/normalized.json';
   if (!existsSync(PATH)) return;

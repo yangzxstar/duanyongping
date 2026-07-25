@@ -48,11 +48,33 @@ export const COMPANY_KEYWORDS = {
   '步步高系': ['步步高', 'OPPO', 'vivo', '小霸王'],
 };
 
+// 纯 ASCII 字母数字关键词（如代码 '00700'、'AAPL'）用 includes 做子串匹配会误命中
+// 更长的数字/字母串（如 "1007000" 误中 "00700"）。中文关键词没有词边界概念，
+// 仍用原始 includes；只对纯 ASCII 字母数字关键词加边界校验：命中位置前后一个
+// 字符不能是 ASCII 字母或数字（括号、$、空格、中文字符等都算合法边界）。
+const ASCII_ALNUM_RE = /^[A-Za-z0-9]+$/;
+const isAsciiAlnum = (ch) => /[A-Za-z0-9]/.test(ch);
+
+function includesWithBoundary(text, keyword) {
+  let from = 0;
+  while (true) {
+    const idx = text.indexOf(keyword, from);
+    if (idx === -1) return false;
+    const before = idx > 0 ? text[idx - 1] : '';
+    const after = idx + keyword.length < text.length ? text[idx + keyword.length] : '';
+    if (!isAsciiAlnum(before) && !isAsciiAlnum(after)) return true;
+    from = idx + 1;
+  }
+}
+
 export function matchCompanies(text) {
   if (!text) return [];
   const hit = new Set();
   for (const [name, keys] of Object.entries(COMPANY_KEYWORDS)) {
-    if (keys.some((k) => text.includes(k))) hit.add(name);
+    const matched = keys.some((k) =>
+      ASCII_ALNUM_RE.test(k) ? includesWithBoundary(text, k) : text.includes(k)
+    );
+    if (matched) hit.add(name);
   }
   return [...hit];
 }
