@@ -11,7 +11,18 @@ bun install
 bun run login     # 打开浏览器，扫码登录，成功后自动退出
 ```
 
-也可以用环境变量自动填表登录（凭据只在环境变量里传递，不落盘）：
+也可以用环境变量自动填表登录（凭据只在环境变量里传递，不落盘）。
+**推荐短信验证码登录：实测不会弹 GeeTest 滑块，无需人工拖动。**
+
+```bash
+# 1. 发送验证码到手机
+XUEQIU_PHONE=手机号 bun run login --send-sms
+
+# 2. 收到后用验证码登录
+XUEQIU_PHONE=手机号 XUEQIU_SMS_CODE=收到的六位码 bun run login
+```
+
+密码登录也支持，但雪球会弹「拖动滑块完成拼图」的人机验证，需要人工拖一次：
 
 ```bash
 XUEQIU_PHONE=手机号 XUEQIU_PASSWORD=密码 bun run login
