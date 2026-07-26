@@ -13,6 +13,9 @@ test.each([
   ['#/search/%E8%8C%85%E5%8F%B0', 'search', '茅台'],
   ['#/garbage/x/y', 'timeline', null],
   ['#/conv', 'timeline', null],
+  ['#/conv/%', 'timeline', null],
+  ['#/conv/%E4%BC', 'timeline', null],
+  ['#/conv/', 'timeline', null],
 ])('parseRoute(%s) → %s / %s', (hash, view, param) => {
   expect(parseRoute(hash)).toEqual({ view, param });
 });

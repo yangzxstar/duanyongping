@@ -7,7 +7,13 @@ export function parseRoute(hash) {
   const [head, ...rest] = h.split('/');
   if (PLAIN_VIEWS.has(head)) return { view: head, param: null };
   if (PARAM_VIEWS.has(head) && rest.length) {
-    return { view: head, param: decodeURIComponent(rest.join('/')) };
+    try {
+      const param = decodeURIComponent(rest.join('/'));
+      if (!param) return { view: 'timeline', param: null };
+      return { view: head, param };
+    } catch {
+      return { view: 'timeline', param: null };
+    }
   }
   return { view: 'timeline', param: null };
 }
