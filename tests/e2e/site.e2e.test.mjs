@@ -60,4 +60,20 @@ describe.skipIf(!RUN)('站点端到端', () => {
     const options = await page.locator('#f-year option').allTextContents();
     expect(options.some((t) => t.includes('空窗年'))).toBe(true);
   }, 30_000);
+
+  test('点击卡片摘要进入详情：全文展开、可回雪球', async () => {
+    await page.goto(base + '/');
+    await page.waitForSelector('#cards article.card .summary a');
+    await page.locator('#cards article.card .summary a').first().click();
+    await page.waitForSelector('main > article.card');
+    expect(page.url()).toContain('#/conv/');
+    expect(await page.locator('main .summary a[href^="#/conv/"]').count()).toBe(0); // 详情页标题不再是链接
+    expect(await page.locator('main .src[href^="https://xueqiu.com/"]').count()).toBeGreaterThan(0);
+    expect(await page.locator('main .fold').count()).toBe(0); // 不折叠
+  }, 30_000);
+
+  test('未知 conv id 显示未找到', async () => {
+    await page.goto(base + '/#/conv/does-not-exist');
+    await page.waitForFunction(() => document.querySelector('main')?.textContent?.includes('未找到'));
+  }, 30_000);
 });

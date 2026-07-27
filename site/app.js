@@ -1,8 +1,10 @@
 import { parseRoute } from './router.js';
 import { renderTimeline } from './views/timeline.js';
+import { renderConv } from './views/conv.js';
 
 const routes = {
   timeline: renderTimeline,
+  conv: renderConv,
 };
 
 const main = document.getElementById('main');
