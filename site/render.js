@@ -53,7 +53,7 @@ export function convCard(entry, conv, { collapse = true, link = true } = {}) {
     <span class="date">${esc(entry.date)}</span>
     ${entry.kind === 'original' ? '<span class="tag">原创</span>' : ''}
     ${entry.featured ? '<span class="tag star">精华</span>' : ''}
-    <span class="likes">赞 ${entry.like ?? 0}</span>
+    <span class="likes">赞 ${esc(String(entry.like ?? 0))}</span>
     ${url ? `<a class="src" href="${esc(url)}" target="_blank" rel="noopener">雪球原帖 ↗</a>` : ''}
   </div>
   <h3 class="summary">${title}</h3>

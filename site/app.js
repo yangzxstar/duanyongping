@@ -5,6 +5,7 @@ import { renderTopics, renderTopic } from './views/topics.js';
 import { renderCompanies, renderCompany } from './views/companies.js';
 import { renderOverview } from './views/overview.js';
 import { renderSearch, initSearchBox } from './views/searchview.js';
+import { esc } from './render.js';
 
 const routes = {
   timeline: renderTimeline,
@@ -26,7 +27,7 @@ async function route() {
   try {
     await handler(main, param);
   } catch (err) {
-    main.innerHTML = `<p class="hint">加载失败：${err?.message ?? err}</p>`;
+    main.innerHTML = `<p class="hint">加载失败：${esc(err?.message ?? String(err))}</p>`;
   }
   const active = view === 'timeline' ? '#/' : `#/${view}`;
   for (const a of document.querySelectorAll('header nav a')) {
