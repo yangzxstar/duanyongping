@@ -51,6 +51,8 @@ export async function renderSearch(main, q) {
     const byId = new Map(index.map((e) => [e.id, e]));
     const progress = main.querySelector('#ft-progress');
     const results = main.querySelector('#ft-results');
+    results.innerHTML = '';
+    progress.textContent = '';
     let found = 0;
     try {
       for (let i = 0; i < years.length; i++) {
