@@ -76,7 +76,14 @@ export async function renderTimeline(main) {
   main.querySelector('#f-topic').onchange = (ev) => { state.topic = ev.target.value; applyFilters(); };
   main.querySelector('#f-company').onchange = (ev) => { state.company = ev.target.value; applyFilters(); };
   main.querySelector('#f-featured').onchange = (ev) => { state.featuredOnly = ev.target.checked; applyFilters(); };
-  more.onclick = () => renderMore();
+  more.onclick = async () => {
+    more.disabled = true;
+    try {
+      await renderMore();
+    } finally {
+      more.disabled = false;
+    }
+  };
 
   await renderMore();
 }
