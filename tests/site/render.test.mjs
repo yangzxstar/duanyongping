@@ -1,5 +1,5 @@
 import { test, expect } from 'bun:test';
-import { esc, mdLite, dialogueItems, dialogueHTML, convCard, withGapMarker, GAP_NOTE } from '../../site/render.js';
+import { esc, mdLite, mdLiteCite, dialogueItems, dialogueHTML, convCard, withGapMarker, GAP_NOTE } from '../../site/render.js';
 
 test('esc 转义 HTML 敏感字符', () => {
   expect(esc('<b>&"\'')).toBe('&lt;b&gt;&amp;&quot;&#39;');
@@ -54,6 +54,49 @@ test('convCard 含日期、雪球原帖链接与话题 chips', () => {
   expect(html).toContain('#/topic/');
   expect(html).toContain('#/company/');
   expect(html).toContain('精华');
+});
+
+test('convCard 原文优先：对话在前，AI 摘要降为带标签的小字行', () => {
+  const entry = { id: 'x1', date: '2024-01-02', kind: 'thread', summary: '摘要文本', topics: ['投资理念'], companies: ['苹果'], like: 10, featured: true };
+  const html = convCard(entry, thread);
+  expect(html.indexOf('class="dialogue')).toBeLessThan(html.indexOf('class="summary'));
+  expect(html).toContain('AI 摘要');
+  expect(html).toContain('summary dim');
+  // 拿不到正文时退回摘要标题
+  const fallback = convCard(entry, null);
+  expect(fallback).toContain('<h3 class="summary">');
+  expect(fallback).not.toContain('dialogue');
+});
+
+test('convCard 列表卡 chips 限量并折叠为 +n，详情页 allChips 显示全部', () => {
+  const entry = {
+    id: 'x1', date: '2024-01-02', kind: 'thread', summary: 's',
+    topics: ['a', 'b', 'c', 'd', 'e'], companies: ['甲', '乙', '丙'], like: 0, featured: false,
+  };
+  const listHtml = convCard(entry, null);
+  expect((listHtml.match(/<a class="chip/g) ?? []).length).toBe(5); // 3 话题 + 2 公司
+  expect(listHtml).toContain('+3');
+  const fullHtml = convCard(entry, null, { allChips: true });
+  expect(fullHtml).not.toContain('+3');
+  expect(fullHtml).toContain('>e<');
+  expect(fullHtml).toContain('>丙<');
+});
+
+test('mdLiteCite 把成串 conv_id 替换成上标引注链接', () => {
+  const html = mdLiteCite('立场明确（133176220、solo-126898894）。**要点**（20522378）');
+  expect(html).toContain('sup class="cites"');
+  expect(html).toContain('href="#/conv/133176220"');
+  expect(html).toContain('href="#/conv/solo-126898894"');
+  expect(html).toContain('>1</a>');
+  expect(html).toContain('>2</a>');
+  expect(html).toContain('>3</a>');
+  expect(html).not.toContain('133176220、');
+});
+
+test('mdLiteCite 不动普通括注与混合内容', () => {
+  const html = mdLiteCite('他提到（大约 2018 年）以及（见 133176220 注释）');
+  expect(html).not.toContain('sup');
+  expect(html).toContain('大约 2018 年');
 });
 
 test('withGapMarker 在 2018 与 2017 交界插一次标记', () => {

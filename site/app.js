@@ -29,7 +29,14 @@ async function route() {
   } catch (err) {
     main.innerHTML = `<p class="hint">加载失败：${esc(err?.message ?? String(err))}</p>`;
   }
-  const active = view === 'timeline' ? '#/' : `#/${view}`;
+  // 详情类视图归到所属导航项，保持"我在哪"的定向。
+  const NAV_OF = {
+    timeline: '#/', conv: '#/', search: '#/',
+    topics: '#/topics', topic: '#/topics',
+    companies: '#/companies', company: '#/companies',
+    overview: '#/overview',
+  };
+  const active = NAV_OF[view] ?? '#/';
   for (const a of document.querySelectorAll('header nav a')) {
     a.classList.toggle('active', a.getAttribute('href') === active);
   }

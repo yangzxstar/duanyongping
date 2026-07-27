@@ -87,7 +87,11 @@ describe.skipIf(!RUN)('站点端到端', () => {
     expect(text).toContain('企业经营/本分');
     expect(await page.locator('blockquote').count()).toBeGreaterThan(5); // 金句
     expect(await page.locator('.points li').count()).toBe(8); // 关键要点
-    expect(await page.locator('.list article.card').count()).toBeGreaterThan(100); // 对话列表
+    await page.waitForSelector('.list article.card');
+    expect(await page.locator('.list article.card').count()).toBe(50); // 对话列表首块 50 条
+    expect(await page.locator('#conv-list .more').isVisible()).toBe(true); // 余下分页加载
+    expect(await page.locator('.list article.card .msg').count()).toBeGreaterThan(0); // 列表卡展示原文
+    expect(await page.locator('.essay sup.cites a').count()).toBeGreaterThan(10); // 综述引注为上标链接
   }, 30_000);
 
   test('公司列表：含苹果与指数/ETF 独立分区', async () => {
@@ -143,7 +147,15 @@ describe.skipIf(!RUN)('站点端到端', () => {
       { timeout: 120_000 },
     );
     expect(await page.locator('#ft-results article[data-id="318765872"]').count()).toBe(1);
+    expect(await page.locator('#ft-results article[data-id="318765872"] mark').count()).toBeGreaterThan(0); // 命中词高亮
   }, 150_000);
+
+  test('搜索页索引命中区：展示原文并高亮命中词', async () => {
+    await page.goto(base + '/#/search/' + encodeURIComponent('茅台'));
+    await page.waitForSelector('#idx-hits article.card');
+    expect(await page.locator('#idx-hits mark').count()).toBeGreaterThan(0);
+    expect(await page.locator('#idx-hits article.card .msg').count()).toBeGreaterThan(0); // 原文优先
+  }, 30_000);
 
   test('首屏加载预算：静态资产 <100KB，index.json <2MB（gzip 后约 400KB，已知偏差见计划）', async () => {
     const sizes = new Map();

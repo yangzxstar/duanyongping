@@ -1,5 +1,6 @@
 import { getCompanies, getInstruments, getIndex } from '../data.js';
-import { esc, convCard } from '../render.js';
+import { esc } from '../render.js';
+import { mountCardList } from './list.js';
 
 const STANCES = [
   ['holds', '持有 / 看好'],
@@ -42,14 +43,18 @@ export async function renderCompany(main, name) {
     return;
   }
   const byId = new Map(index.map((e) => [e.id, e]));
+  const sections = STANCES.map(([k, label]) => ({
+    key: k,
+    label,
+    entries: co[k]
+      .map((id) => byId.get(id))
+      .filter(Boolean)
+      .sort((a, b) => a.date.localeCompare(b.date)),
+  })).filter((s) => s.entries.length);
   main.innerHTML =
     `<h2>${esc(co.name)}</h2>` +
-    STANCES.map(([k, label]) => {
-      const entries = co[k]
-        .map((id) => byId.get(id))
-        .filter(Boolean)
-        .sort((a, b) => a.date.localeCompare(b.date));
-      if (!entries.length) return '';
-      return `<section><h3>${label}（${entries.length}）</h3><div class="list">${entries.map((e) => convCard(e, null)).join('')}</div></section>`;
-    }).join('');
+    sections
+      .map((s) => `<section><h3>${s.label}（${s.entries.length}）</h3><div class="list" id="list-${s.key}"></div></section>`)
+      .join('');
+  await Promise.all(sections.map((s) => mountCardList(main.querySelector(`#list-${s.key}`), s.entries)));
 }

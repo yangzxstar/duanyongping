@@ -11,11 +11,36 @@ export function mdLite(text) {
     .join('');
 }
 
+// mdLite + 引注：把综述里成串的（conv_id、conv_id…）替换成可点击的上标序号，
+// 数字噪音换成导航价值。括号内混有其他文字时不动（避免误伤正常括注）。
+export function mdLiteCite(text) {
+  let n = 0;
+  return mdLite(text).replace(/（([0-9solo\-、，\s]+)）/g, (m, inner) => {
+    const ids = inner.match(/(?:solo-)?\d{6,}/g);
+    if (!ids) return m;
+    if (inner.replace(/(?:solo-)?\d{6,}/g, '').replace(/[、，\s]/g, '')) return m;
+    return `<sup class="cites">${ids
+      .map((id) => `<a href="#/conv/${encodeURIComponent(id)}" title="查看原对话 ${esc(id)}">${++n}</a>`)
+      .join('')}</sup>`;
+  });
+}
+
 export const topicChips = (topics) =>
   (topics ?? []).map((t) => `<a class="chip" href="#/topic/${encodeURIComponent(t.replaceAll('/', '-'))}">${esc(t)}</a>`).join('');
 
 export const companyChips = (names) =>
   (names ?? []).map((n) => `<a class="chip chip-co" href="#/company/${encodeURIComponent(n)}">${esc(n)}</a>`).join('');
+
+// 列表卡片里 chips 限量，余量折叠成 +n；详情页传 allChips 显示全部。
+function chipsHTML(entry, allChips) {
+  const topics = entry.topics ?? [];
+  const companies = entry.companies ?? [];
+  if (allChips) return topicChips(topics) + companyChips(companies);
+  const tCut = topics.slice(0, 3);
+  const cCut = companies.slice(0, 2);
+  const hidden = topics.length - tCut.length + (companies.length - cCut.length);
+  return topicChips(tCut) + companyChips(cCut) + (hidden > 0 ? `<span class="chip more-chip">+${hidden}</span>` : '');
+}
 
 export function dialogueItems(conv) {
   const items = [];
@@ -44,21 +69,38 @@ export function dialogueHTML(conv, { collapse = true } = {}) {
   return html;
 }
 
-export function convCard(entry, conv, { collapse = true, link = true } = {}) {
+// 原文优先：有 conv 时对话正文置顶，AI 摘要降为底部小字导读行；
+// 只有拿不到正文时才退回摘要当标题。
+export function convCard(entry, conv, { collapse = true, link = true, allChips = false } = {}) {
   const url = conv?.posts?.[0]?.url ?? '';
-  const summary = esc(entry.summary || '（无摘要）');
-  const title = link ? `<a href="#/conv/${encodeURIComponent(entry.id)}">${summary}</a>` : summary;
-  return `<article class="card" data-id="${esc(entry.id)}">
-  <div class="meta">
+  const summary = esc(entry.summary || '');
+  const detailHref = `#/conv/${encodeURIComponent(entry.id)}`;
+  const meta = `<div class="meta">
     <span class="date">${esc(entry.date)}</span>
     ${entry.kind === 'original' ? '<span class="tag">原创</span>' : ''}
     ${entry.featured ? '<span class="tag star">精华</span>' : ''}
     <span class="likes">赞 ${esc(String(entry.like ?? 0))}</span>
     ${url ? `<a class="src" href="${esc(url)}" target="_blank" rel="noopener">雪球原帖 ↗</a>` : ''}
-  </div>
+  </div>`;
+  const chips = `<div class="chips">${chipsHTML(entry, allChips)}</div>`;
+  if (conv) {
+    const summaryLine = summary
+      ? link
+        ? `<p class="summary dim"><a href="${detailHref}"><span class="ai-tag">AI 摘要</span>${summary}</a></p>`
+        : `<p class="summary dim"><span class="ai-tag">AI 摘要</span>${summary}</p>`
+      : '';
+    return `<article class="card" data-id="${esc(entry.id)}">
+  ${meta}
+  <div class="dialogue lead">${dialogueHTML(conv, { collapse })}</div>
+  ${summaryLine}
+  ${chips}
+</article>`;
+  }
+  const title = link ? `<a href="${detailHref}">${summary || '（无摘要）'}</a>` : summary || '（无摘要）';
+  return `<article class="card" data-id="${esc(entry.id)}">
+  ${meta}
   <h3 class="summary">${title}</h3>
-  ${conv ? `<div class="dialogue">${dialogueHTML(conv, { collapse })}</div>` : ''}
-  <div class="chips">${topicChips(entry.topics)}${companyChips(entry.companies)}</div>
+  ${chips}
 </article>`;
 }
 
