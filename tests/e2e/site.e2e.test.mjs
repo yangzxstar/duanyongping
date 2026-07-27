@@ -124,4 +124,24 @@ describe.skipIf(!RUN)('站点端到端', () => {
     expect(await page.locator('.pillar').count()).toBe(5);
     expect(await page.locator('.pillar .chip').count()).toBeGreaterThan(0); // 支柱链到话题页
   }, 30_000);
+
+  test('搜索框：输入即时出下拉结果', async () => {
+    await page.goto(base + '/');
+    await page.waitForSelector('#searchbox input');
+    await page.fill('#searchbox input', '茅台');
+    await page.waitForSelector('#searchbox .drop a');
+    expect(await page.locator('#searchbox .drop a').count()).toBeGreaterThan(1);
+  }, 30_000);
+
+  test('全文搜索：费德勒命中 2024 年那场对话', async () => {
+    await page.goto(base + '/#/search/' + encodeURIComponent('费德勒'));
+    await page.waitForSelector('#ft-go');
+    await page.click('#ft-go');
+    await page.waitForFunction(
+      () => document.querySelector('#ft-progress')?.textContent?.includes('完成'),
+      undefined,
+      { timeout: 120_000 },
+    );
+    expect(await page.locator('#ft-results article[data-id="318765872"]').count()).toBe(1);
+  }, 150_000);
 });

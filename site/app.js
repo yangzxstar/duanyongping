@@ -4,6 +4,7 @@ import { renderConv } from './views/conv.js';
 import { renderTopics, renderTopic } from './views/topics.js';
 import { renderCompanies, renderCompany } from './views/companies.js';
 import { renderOverview } from './views/overview.js';
+import { renderSearch, initSearchBox } from './views/searchview.js';
 
 const routes = {
   timeline: renderTimeline,
@@ -13,6 +14,7 @@ const routes = {
   companies: renderCompanies,
   company: renderCompany,
   overview: renderOverview,
+  search: renderSearch,
 };
 
 const main = document.getElementById('main');
@@ -34,3 +36,4 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 route();
+initSearchBox(document.getElementById('searchbox'));
