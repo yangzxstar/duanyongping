@@ -2,12 +2,15 @@ import { parseRoute } from './router.js';
 import { renderTimeline } from './views/timeline.js';
 import { renderConv } from './views/conv.js';
 import { renderTopics, renderTopic } from './views/topics.js';
+import { renderCompanies, renderCompany } from './views/companies.js';
 
 const routes = {
   timeline: renderTimeline,
   conv: renderConv,
   topics: renderTopics,
   topic: renderTopic,
+  companies: renderCompanies,
+  company: renderCompany,
 };
 
 const main = document.getElementById('main');

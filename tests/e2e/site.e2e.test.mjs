@@ -89,4 +89,30 @@ describe.skipIf(!RUN)('站点端到端', () => {
     expect(await page.locator('.points li').count()).toBe(8); // 关键要点
     expect(await page.locator('.list article.card').count()).toBeGreaterThan(100); // 对话列表
   }, 30_000);
+
+  test('公司列表：含苹果与指数/ETF 独立分区', async () => {
+    await page.goto(base + '/#/companies');
+    await page.waitForSelector('.co-list');
+    const text = await page.locator('main').textContent();
+    expect(text).toContain('苹果');
+    expect(text).toContain('指数 / ETF（19）');
+    expect(text).toContain('小霸王'); // 实体拆分后的独立条目
+  }, 30_000);
+
+  test('公司页：stance 分区且每区内日期升序', async () => {
+    await page.goto(base + '/#/company/' + encodeURIComponent('苹果'));
+    await page.waitForSelector('main section .list article.card');
+    const headings = await page.locator('main section h3').allTextContents();
+    expect(headings.some((h) => h.includes('持有'))).toBe(true);
+    const dates = await page.locator('main section:first-of-type .list .date').allTextContents();
+    const sorted = [...dates].sort();
+    expect(dates).toEqual(sorted); // 时间正序
+  }, 30_000);
+
+  test('指数详情复用公司页：纳指3X做空ETF 归于批评区', async () => {
+    await page.goto(base + '/#/company/' + encodeURIComponent('纳指3X做空ETF'));
+    await page.waitForSelector('main section');
+    const text = await page.locator('main').textContent();
+    expect(text).toContain('批评');
+  }, 30_000);
 });
