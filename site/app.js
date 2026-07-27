@@ -3,6 +3,7 @@ import { renderTimeline } from './views/timeline.js';
 import { renderConv } from './views/conv.js';
 import { renderTopics, renderTopic } from './views/topics.js';
 import { renderCompanies, renderCompany } from './views/companies.js';
+import { renderOverview } from './views/overview.js';
 
 const routes = {
   timeline: renderTimeline,
@@ -11,6 +12,7 @@ const routes = {
   topic: renderTopic,
   companies: renderCompanies,
   company: renderCompany,
+  overview: renderOverview,
 };
 
 const main = document.getElementById('main');

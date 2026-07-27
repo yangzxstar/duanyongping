@@ -115,4 +115,13 @@ describe.skipIf(!RUN)('站点端到端', () => {
     const text = await page.locator('main').textContent();
     expect(text).toContain('批评');
   }, 30_000);
+
+  test('总纲页：标题与 5 根支柱', async () => {
+    await page.goto(base + '/#/overview');
+    await page.waitForSelector('.pillars');
+    const text = await page.locator('main').textContent();
+    expect(text).toContain('段永平投资体系总纲');
+    expect(await page.locator('.pillar').count()).toBe(5);
+    expect(await page.locator('.pillar .chip').count()).toBeGreaterThan(0); // 支柱链到话题页
+  }, 30_000);
 });
