@@ -52,29 +52,34 @@ export async function renderSearch(main, q) {
     const progress = main.querySelector('#ft-progress');
     const results = main.querySelector('#ft-results');
     let found = 0;
-    for (let i = 0; i < years.length; i++) {
-      progress.textContent = `加载 ${years[i]}…（${i + 1}/${years.length}，已命中 ${found} 条）`;
-      const convs = await getYear(years[i]);
-      const hits = convs.filter((c) => convMatches(c, q));
-      found += hits.length;
-      results.insertAdjacentHTML(
-        'beforeend',
-        hits
-          .map((c) => {
-            const entry = byId.get(c.id) ?? {
-              id: c.id,
-              date: (c.first_at ?? '').slice(0, 10),
-              kind: c.kind,
-              summary: c.summary ?? '',
-              topics: c.topics ?? [],
-              companies: [],
-              like: c.stats?.like ?? 0,
-            };
-            return convCard(entry, c);
-          })
-          .join(''),
-      );
+    try {
+      for (let i = 0; i < years.length; i++) {
+        progress.textContent = `加载 ${years[i]}…（${i + 1}/${years.length}，已命中 ${found} 条）`;
+        const convs = await getYear(years[i]);
+        const hits = convs.filter((c) => convMatches(c, q));
+        found += hits.length;
+        results.insertAdjacentHTML(
+          'beforeend',
+          hits
+            .map((c) => {
+              const entry = byId.get(c.id) ?? {
+                id: c.id,
+                date: (c.first_at ?? '').slice(0, 10),
+                kind: c.kind,
+                summary: c.summary ?? '',
+                topics: c.topics ?? [],
+                companies: [],
+                like: c.stats?.like ?? 0,
+              };
+              return convCard(entry, c);
+            })
+            .join(''),
+        );
+      }
+      progress.textContent = `完成：全文命中 ${found} 条。`;
+    } catch (err) {
+      progress.textContent = '全文搜索失败：' + (err?.message ?? err) + '（可重试）';
+      ev.target.disabled = false;
     }
-    progress.textContent = `完成：全文命中 ${found} 条。`;
   };
 }
