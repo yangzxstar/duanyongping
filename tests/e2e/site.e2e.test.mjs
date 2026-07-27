@@ -144,4 +144,25 @@ describe.skipIf(!RUN)('站点端到端', () => {
     );
     expect(await page.locator('#ft-results article[data-id="318765872"]').count()).toBe(1);
   }, 150_000);
+
+  test('首屏加载预算：静态资产 <100KB，index.json <2MB（gzip 后约 400KB，已知偏差见计划）', async () => {
+    const sizes = new Map();
+    const p = await browser.newPage();
+    p.on('response', async (res) => {
+      try {
+        sizes.set(new URL(res.url()).pathname, (await res.body()).length);
+      } catch {}
+    });
+    await p.goto(base + '/');
+    await p.waitForSelector('#cards article.card');
+    await p.close();
+    const staticBytes = [...sizes.entries()]
+      .filter(([path]) => !path.startsWith('/data/'))
+      .reduce((n, [, b]) => n + b, 0);
+    const indexBytes = sizes.get('/data/index.json') ?? 0;
+    console.log(`静态资产 ${(staticBytes / 1024).toFixed(1)}KB，index.json ${(indexBytes / 1024 / 1024).toFixed(2)}MB`);
+    expect(staticBytes).toBeLessThan(100 * 1024);
+    expect(indexBytes).toBeGreaterThan(0);
+    expect(indexBytes).toBeLessThan(2 * 1024 * 1024);
+  }, 60_000);
 });
