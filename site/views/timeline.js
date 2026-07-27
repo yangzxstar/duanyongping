@@ -4,9 +4,11 @@ import { convCard, withGapMarker, GAP_NOTE, esc } from '../render.js';
 const CHUNK = 50;
 const GAP_YEARS = new Set(['2013', '2014', '2015', '2016', '2017']);
 const state = { year: '', topic: '', company: '', featuredOnly: true, shown: 0 };
+let gen = 0;
 
 export async function renderTimeline(main) {
   Object.assign(state, { year: '', topic: '', company: '', featuredOnly: true, shown: 0 });
+  gen += 1;
   const index = await getIndex();
 
   const yearCounts = new Map();
@@ -48,10 +50,12 @@ export async function renderTimeline(main) {
   }
 
   async function renderMore() {
+    const myGen = gen;
     const list = filteredList();
     const slice = list.slice(state.shown, state.shown + CHUNK);
     const yearsNeeded = [...new Set(slice.filter((x) => !x.gap).map((e) => e.date.slice(0, 4)))];
     const shards = await Promise.all(yearsNeeded.map((y) => getYear(y)));
+    if (myGen !== gen) return;
     const byId = new Map(shards.flat().map((c) => [c.id, c]));
     cards.insertAdjacentHTML(
       'beforeend',
@@ -62,6 +66,7 @@ export async function renderTimeline(main) {
   }
 
   async function applyFilters() {
+    gen += 1;
     state.shown = 0;
     cards.innerHTML = '';
     await renderMore();
@@ -71,6 +76,7 @@ export async function renderTimeline(main) {
   main.querySelector('#f-topic').onchange = (ev) => { state.topic = ev.target.value; applyFilters(); };
   main.querySelector('#f-company').onchange = (ev) => { state.company = ev.target.value; applyFilters(); };
   main.querySelector('#f-featured').onchange = (ev) => { state.featuredOnly = ev.target.checked; applyFilters(); };
+  more.onclick = () => renderMore();
 
   await renderMore();
 }

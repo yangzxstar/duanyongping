@@ -45,6 +45,13 @@ describe.skipIf(!RUN)('站点端到端', () => {
     await page.waitForSelector('#cards article.card');
     // 全部 5174 > 精华 806：加载更多按钮必然可见
     expect(await page.locator('#more').isVisible()).toBe(true);
+    const before = await page.locator('#cards article.card').count();
+    await page.click('#more');
+    await page.waitForFunction(
+      (n) => document.querySelectorAll('#cards article.card').length > n,
+      before,
+    );
+    expect(await page.locator('#cards article.card').count()).toBeGreaterThan(before);
   }, 30_000);
 
   test('年份下拉标注空窗年', async () => {
