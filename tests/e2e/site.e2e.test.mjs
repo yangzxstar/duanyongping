@@ -76,4 +76,17 @@ describe.skipIf(!RUN)('站点端到端', () => {
     await page.goto(base + '/#/conv/does-not-exist');
     await page.waitForFunction(() => document.querySelector('main')?.textContent?.includes('未找到'));
   }, 30_000);
+
+  test('话题树：8 个一级话题，可进入话题页', async () => {
+    await page.goto(base + '/#/topics');
+    await page.waitForSelector('.topic-tree');
+    expect(await page.locator('.topic-node').count()).toBe(8);
+    await page.locator('a.topic-sub', { hasText: '本分' }).first().click();
+    await page.waitForSelector('.essay');
+    const text = await page.locator('main').textContent();
+    expect(text).toContain('企业经营/本分');
+    expect(await page.locator('blockquote').count()).toBeGreaterThan(5); // 金句
+    expect(await page.locator('.points li').count()).toBe(8); // 关键要点
+    expect(await page.locator('.list article.card').count()).toBeGreaterThan(100); // 对话列表
+  }, 30_000);
 });

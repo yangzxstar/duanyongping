@@ -1,10 +1,13 @@
 import { parseRoute } from './router.js';
 import { renderTimeline } from './views/timeline.js';
 import { renderConv } from './views/conv.js';
+import { renderTopics, renderTopic } from './views/topics.js';
 
 const routes = {
   timeline: renderTimeline,
   conv: renderConv,
+  topics: renderTopics,
+  topic: renderTopic,
 };
 
 const main = document.getElementById('main');
