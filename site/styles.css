@@ -1,0 +1,115 @@
+:root {
+  --bg: #faf9f6;
+  --card: #ffffff;
+  --ink: #1f2328;
+  --muted: #6b7280;
+  --accent: #8b5a2b;
+  --dao-bg: #f6efe4;
+  --border: #e5e1d8;
+  --chip: #eee9df;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171512;
+    --card: #201d19;
+    --ink: #e8e4dc;
+    --muted: #9a948a;
+    --accent: #d9a55f;
+    --dao-bg: #2a251d;
+    --border: #38332b;
+    --chip: #2e2a23;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.75 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 0.7rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+  flex-wrap: wrap;
+}
+.brand { font-weight: 700; font-size: 1.15rem; color: var(--accent); text-decoration: none; }
+header nav { display: flex; gap: 0.9rem; }
+header nav a { color: var(--muted); text-decoration: none; }
+header nav a.active { color: var(--ink); font-weight: 600; }
+#searchbox { margin-left: auto; position: relative; }
+#searchbox input { padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--ink); min-width: 220px; }
+#searchbox .drop {
+  position: absolute; right: 0; top: 2.4rem; width: min(420px, 90vw);
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 12%); max-height: 60vh; overflow: auto; z-index: 20;
+}
+#searchbox .drop a { display: block; padding: 0.5rem 0.8rem; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+#searchbox .drop a:hover { background: var(--dao-bg); }
+#searchbox .drop .fulltext { color: var(--accent); }
+main { max-width: 760px; margin: 0 auto; padding: 1.2rem; }
+footer { max-width: 760px; margin: 2rem auto; padding: 0 1.2rem 2rem; color: var(--muted); font-size: 0.85rem; }
+.hint { color: var(--muted); }
+.filters { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.filters select { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: var(--ink); max-width: 100%; }
+.toggle { color: var(--muted); user-select: none; }
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem 1.2rem; margin-bottom: 1rem;
+}
+.meta { display: flex; gap: 0.7rem; align-items: baseline; color: var(--muted); font-size: 0.85rem; flex-wrap: wrap; }
+.meta .src { margin-left: auto; color: var(--muted); }
+.tag { border: 1px solid var(--border); border-radius: 4px; padding: 0 0.35rem; font-size: 0.78rem; }
+.tag.star { color: var(--accent); border-color: var(--accent); }
+.summary { margin: 0.4rem 0 0.6rem; font-size: 1.02rem; line-height: 1.6; }
+.summary a { color: var(--ink); text-decoration: none; }
+.summary a:hover { color: var(--accent); }
+.dialogue { border-top: 1px dashed var(--border); padding-top: 0.6rem; }
+.msg { margin: 0.45rem 0; padding: 0.45rem 0.7rem; border-radius: 8px; }
+.msg .speaker { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.1rem; }
+.msg.dao { background: var(--dao-bg); border-left: 3px solid var(--accent); }
+.msg.dao .speaker { color: var(--accent); font-weight: 600; }
+.msg.root { border: 1px dashed var(--border); }
+.fold summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; margin: 0.4rem 0; }
+.chips { margin-top: 0.6rem; display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.chip { background: var(--chip); border-radius: 999px; padding: 0.1rem 0.7rem; font-size: 0.8rem; color: var(--ink); text-decoration: none; }
+.chip:hover { color: var(--accent); }
+.gap {
+  border: 1px dashed var(--accent); border-radius: 10px; color: var(--muted);
+  padding: 0.8rem 1.2rem; margin: 1.2rem 0; text-align: center; font-size: 0.9rem;
+}
+.more { display: block; margin: 1.5rem auto; padding: 0.5rem 2rem; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: var(--ink); cursor: pointer; }
+.more:hover { border-color: var(--accent); color: var(--accent); }
+.back { border: none; background: none; color: var(--accent); cursor: pointer; font-size: 0.95rem; padding: 0; margin-bottom: 0.8rem; }
+.essay p { margin: 0.8rem 0; }
+.points li { margin: 0.5rem 0; }
+.points .ref { color: var(--accent); text-decoration: none; margin-left: 0.2rem; }
+blockquote { margin: 1rem 0; padding: 0.6rem 1rem; border-left: 3px solid var(--accent); background: var(--dao-bg); border-radius: 0 8px 8px 0; }
+blockquote footer { text-align: right; font-size: 0.85rem; }
+blockquote footer a { color: var(--muted); text-decoration: none; }
+.topic-tree { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+.topic-node { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem 1.1rem; }
+.topic-top { display: block; font-weight: 600; color: var(--ink); text-decoration: none; margin-bottom: 0.4rem; }
+.topic-top:hover { color: var(--accent); }
+.topic-sub { display: inline-block; margin: 0.15rem 0.5rem 0.15rem 0; color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+.topic-sub:hover { color: var(--accent); }
+.n { color: var(--muted); font-weight: 400; font-size: 0.8rem; }
+.co-list { display: flex; flex-direction: column; }
+.co-row { display: flex; gap: 1rem; justify-content: space-between; padding: 0.5rem 0.2rem; border-bottom: 1px solid var(--border); color: var(--ink); text-decoration: none; flex-wrap: wrap; }
+.co-row:hover .co-name { color: var(--accent); }
+.co-name { font-weight: 600; }
+.co-counts { color: var(--muted); font-size: 0.85rem; }
+.pillars { display: grid; gap: 1rem; margin: 1.2rem 0; }
+.pillar { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem; }
+.pillar h3 { margin: 0 0 0.4rem; font-size: 1rem; color: var(--accent); }
+.pillar p { margin: 0 0 0.6rem; font-size: 0.92rem; }
+@media (max-width: 640px) {
+  #searchbox { margin-left: 0; width: 100%; }
+  #searchbox input { width: 100%; }
+}

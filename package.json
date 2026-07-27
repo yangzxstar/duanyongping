@@ -18,7 +18,8 @@
     "report": "bun build/report.mjs",
     "auto": "bun scraper/await-login-and-run.mjs",
     "qr": "bun scraper/qr-login-and-run.mjs",
-    "test": "bun test"
+    "test": "bun test",
+    "test:e2e": "E2E=1 bun test tests/e2e/"
   },
   "dependencies": {
     "playwright": "1.52.0",
