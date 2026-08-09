@@ -1,9 +1,8 @@
 scraper/.profile/
 node_modules/
-# 抓取产物：体量大、可由脚本完整重建，且是他人的公开内容——先不入版本库
-data/
+# 抓取原始数据：体量大、可由脚本完整重建——不入版本库（site/data/ 是站点数据，入库）
+/data/
 .DS_Store
-site/data/
 # Claude Code 本地会话配置
 .claude/
 skills-lock.json
