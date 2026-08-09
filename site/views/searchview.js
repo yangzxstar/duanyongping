@@ -31,7 +31,7 @@ function markMatches(rootEl, q) {
 }
 
 export function initSearchBox(el) {
-  el.innerHTML = `<input id="q" type="search" placeholder="搜摘要 / 话题 / 公司…"><div id="q-drop" class="drop" hidden></div>`;
+  el.innerHTML = `<input id="q" name="q" type="search" aria-label="搜索摘要、话题、公司" placeholder="搜摘要 / 话题 / 公司…"><div id="q-drop" class="drop" hidden></div>`;
   const input = el.querySelector('#q');
   const drop = el.querySelector('#q-drop');
 
@@ -51,6 +51,25 @@ export function initSearchBox(el) {
     if (ev.key === 'Enter' && input.value.trim()) {
       drop.hidden = true;
       location.hash = `#/search/${encodeURIComponent(input.value.trim())}`;
+    } else if (ev.key === 'ArrowDown' && !drop.hidden) {
+      ev.preventDefault();
+      drop.querySelector('a')?.focus();
+    } else if (ev.key === 'Escape') {
+      drop.hidden = true;
+    }
+  });
+  // 下拉内：上下键在结果间移动，Escape 关闭并回焦输入框。
+  drop.addEventListener('keydown', (ev) => {
+    if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+      ev.preventDefault();
+      const links = [...drop.querySelectorAll('a')];
+      const i = links.indexOf(document.activeElement);
+      const next = links[i + (ev.key === 'ArrowDown' ? 1 : -1)];
+      if (next) next.focus();
+      else if (ev.key === 'ArrowUp') input.focus();
+    } else if (ev.key === 'Escape') {
+      drop.hidden = true;
+      input.focus();
     }
   });
   document.addEventListener('click', (ev) => {
@@ -70,7 +89,7 @@ export async function renderSearch(main, q) {
 <h3>全文搜索</h3>
 <p class="hint">逐年加载全部对话正文（约 11MB）后在原文内匹配。</p>
 <button id="ft-go" class="more">开始全文搜索</button>
-<div id="ft-progress" class="hint"></div>
+<div id="ft-progress" class="hint" aria-live="polite"></div>
 <div id="ft-results" class="list"></div>`;
 
   await mountCardList(main.querySelector('#idx-hits'), idxHits, {

@@ -58,8 +58,9 @@ ${t.best_quotes
 <h3>全部对话 <span class="n">${entries.length} 场</span></h3>
 <div class="list" id="conv-list"></div>
 </section>`;
+  const smooth = matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
   for (const b of main.querySelectorAll('.secnav button')) {
-    b.onclick = () => document.getElementById(b.dataset.sec)?.scrollIntoView({ behavior: 'smooth' });
+    b.onclick = () => document.getElementById(b.dataset.sec)?.scrollIntoView({ behavior: smooth });
   }
   await mountCardList(main.querySelector('#conv-list'), entries);
 }
