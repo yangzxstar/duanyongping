@@ -4,3 +4,6 @@ node_modules/
 data/
 .DS_Store
 site/data/
+# Claude Code 本地会话配置
+.claude/
+skills-lock.json
