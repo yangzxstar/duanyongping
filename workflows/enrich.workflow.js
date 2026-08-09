@@ -77,7 +77,7 @@ const SCHEMA = {
   },
 }
 
-const DIR = '/Users/seal/duanyongping/data/enrich'
+const DIR = 'data/enrich'
 
 // 由 args 指定要跑哪些批次：{ batches: [1,2] } 或 { total: 130 }
 const nums =

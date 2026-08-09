@@ -7,3 +7,5 @@ site/data/
 # Claude Code 本地会话配置
 .claude/
 skills-lock.json
+# 内部设计/计划文档，不公开
+docs/

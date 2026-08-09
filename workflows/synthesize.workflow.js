@@ -30,7 +30,7 @@ const ALL_TOPICS = [
   '生活与人生',
 ]
 
-const DATA = '/Users/seal/duanyongping/data'
+const DATA = 'data'
 
 // args.topics 指定要跑哪些话题；args.overview 为 false 则跳过总纲
 const topicPaths = args && Array.isArray(args.topics) ? args.topics : ALL_TOPICS

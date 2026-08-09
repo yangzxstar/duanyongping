@@ -7,9 +7,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = join(HERE, '..', '..');
 export const PROFILE_DIR = join(PROJECT_ROOT, 'scraper', '.profile');
 
-// 本机已缓存的完整 Chromium（headless shell 缺可执行文件，不能用）
-const CHROMIUM_PATH =
-  '/Users/seal/Library/Caches/ms-playwright/chromium-1169/chrome-mac/Chromium.app/Contents/MacOS/Chromium';
+// 需要完整 Chromium（headless shell 缺可执行文件，不能用）；
+// 默认用 Playwright 自带的，可用 CHROMIUM_PATH 环境变量指定本机缓存的浏览器
+const CHROMIUM_PATH = process.env.CHROMIUM_PATH || undefined;
 
 export const XUEQIU_HOME = 'https://xueqiu.com/';
 export const USER_ID = '1247347556';
