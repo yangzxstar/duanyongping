@@ -12,7 +12,15 @@ export function mountCardList(el, entries, opts = {}) {
   const cards = el.querySelector('.cards');
   const more = el.querySelector('.more');
 
-  async function renderMore() {
+  // 自动加载可能在上一块渲染中途触发；串行排队，避免并发重复消费同一段 slice。
+  let queue = Promise.resolve();
+  function renderMore() {
+    const run = queue.then(renderChunk);
+    queue = run.catch(() => {});
+    return run;
+  }
+
+  async function renderChunk() {
     const slice = entries.slice(shown, shown + chunk);
     const years = [...new Set(slice.map((e) => e.date.slice(0, 4)))];
     // 单个分片加载失败只影响该年的正文展示（退回摘要卡），不整页报错。
@@ -31,8 +39,18 @@ export function mountCardList(el, entries, opts = {}) {
       await renderMore();
     } finally {
       more.disabled = false;
+      io.unobserve(more);
+      io.observe(more);
     }
   };
+  // 滚近底部自动加载，按钮保留作降级入口。
+  const io = new IntersectionObserver(
+    (es) => {
+      if (es.some((e) => e.isIntersecting) && !more.disabled && more.style.display !== 'none') more.click();
+    },
+    { rootMargin: '600px' },
+  );
+  io.observe(more);
 
   return renderMore();
 }

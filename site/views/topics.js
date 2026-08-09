@@ -6,14 +6,21 @@ export async function renderTopics(main) {
   const index = await getIndex();
   const counts = new Map();
   for (const e of index) for (const t of e.topics) counts.set(t, (counts.get(t) ?? 0) + 1);
-  const tops = [...counts.keys()].filter((t) => !t.includes('/')).sort((a, b) => counts.get(b) - counts.get(a));
+  // 父话题的独立计数会小于子话题（能力圈 669 > 投资理念 330），单独展示会误导规模感；
+  // 有子话题时标注"共（去重聚合）· 本级"双口径。
+  const agg = new Map();
+  for (const e of index) {
+    for (const top of new Set(e.topics.map((t) => t.split('/')[0]))) agg.set(top, (agg.get(top) ?? 0) + 1);
+  }
+  const tops = [...counts.keys()].filter((t) => !t.includes('/')).sort((a, b) => (agg.get(b) ?? 0) - (agg.get(a) ?? 0));
   main.innerHTML =
     `<h2>话题</h2><div class="topic-tree">` +
     tops
       .map((top) => {
         const subs = [...counts.keys()].filter((t) => t.startsWith(top + '/')).sort((a, b) => counts.get(b) - counts.get(a));
+        const label = subs.length ? `共 ${agg.get(top)} 场 · 本级 ${counts.get(top)}` : `${counts.get(top)} 场`;
         return `<section class="topic-node">
-  <a class="topic-top" href="#/topic/${encodeURIComponent(topicSlug(top))}">${esc(top)} <span class="n">${counts.get(top)} 场</span></a>
+  <a class="topic-top" href="#/topic/${encodeURIComponent(topicSlug(top))}">${esc(top)} <span class="n">${label}</span></a>
   <div>${subs
     .map((s) => `<a class="topic-sub" href="#/topic/${encodeURIComponent(topicSlug(s))}">${esc(s.split('/')[1])} <span class="n">${counts.get(s)}</span></a>`)
     .join('')}</div>

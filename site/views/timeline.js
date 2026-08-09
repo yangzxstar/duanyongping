@@ -48,6 +48,10 @@ export async function renderTimeline(main) {
   if (state.company && !companies.includes(state.company)) companies.push(state.company);
 
   main.innerHTML = `
+<nav class="year-rail" aria-label="按年跳转">
+  <a href="#/" data-year="">全部</a>
+  ${years.map((y) => `<a href="#/?year=${y}" data-year="${y}">${y}</a>`).join('')}
+</nav>
 <div class="filters">
   <select id="f-year" aria-label="按年份筛选"><option value="">全部年份</option>${years
     .map((y) => `<option value="${y}">${y}（${yearCounts.get(y)} 场${GAP_YEARS.has(y) ? '，空窗年' : ''}）</option>`)
@@ -79,7 +83,15 @@ export async function renderTimeline(main) {
     );
   }
 
-  async function renderMore() {
+  // 自动加载可能在上一块渲染中途触发；串行排队，避免并发重复消费同一段 slice。
+  let queue = Promise.resolve();
+  function renderMore() {
+    const run = queue.then(renderChunk);
+    queue = run.catch(() => {});
+    return run;
+  }
+
+  async function renderChunk() {
     const myGen = gen;
     const list = filteredList();
     const slice = list.slice(state.shown, state.shown + CHUNK);
@@ -95,13 +107,30 @@ export async function renderTimeline(main) {
     more.style.display = state.shown >= list.length ? 'none' : '';
   }
 
+  const rail = main.querySelector('.year-rail');
+  const markRail = () => {
+    for (const a of rail.querySelectorAll('a')) a.classList.toggle('active', a.dataset.year === state.year);
+  };
+
   async function applyFilters() {
     gen += 1;
     state.shown = 0;
     writeStateToHash();
+    markRail();
     cards.innerHTML = '';
     await renderMore();
   }
+
+  // 刻度条点击走 applyFilters 而非整页跳转，保留话题/公司/精华等其余筛选。
+  rail.onclick = (ev) => {
+    const a = ev.target.closest('a[data-year]');
+    if (!a) return;
+    ev.preventDefault();
+    state.year = a.dataset.year;
+    main.querySelector('#f-year').value = state.year;
+    applyFilters();
+  };
+  markRail();
 
   main.querySelector('#f-year').onchange = (ev) => { state.year = ev.target.value; applyFilters(); };
   main.querySelector('#f-topic').onchange = (ev) => { state.topic = ev.target.value; applyFilters(); };
@@ -113,8 +142,19 @@ export async function renderTimeline(main) {
       await renderMore();
     } finally {
       more.disabled = false;
+      // 重新 observe 触发一次回调：若按钮仍在预载区内则继续加载。
+      io.unobserve(more);
+      io.observe(more);
     }
   };
+  // 滚近底部自动加载下一页，按钮保留作降级入口。
+  const io = new IntersectionObserver(
+    (es) => {
+      if (es.some((e) => e.isIntersecting) && !more.disabled && more.style.display !== 'none') more.click();
+    },
+    { rootMargin: '600px' },
+  );
+  io.observe(more);
 
   await renderMore();
 }

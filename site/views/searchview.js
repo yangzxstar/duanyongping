@@ -31,9 +31,17 @@ function markMatches(rootEl, q) {
 }
 
 export function initSearchBox(el) {
-  el.innerHTML = `<input id="q" name="q" type="search" aria-label="搜索摘要、话题、公司" placeholder="搜摘要 / 话题 / 公司…"><div id="q-drop" class="drop" hidden></div>`;
+  el.innerHTML = `<button class="search-toggle" type="button" aria-label="搜索" aria-expanded="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button><input id="q" name="q" type="search" aria-label="搜索摘要、话题、公司" placeholder="搜摘要 / 话题 / 公司…"><div id="q-drop" class="drop" hidden></div>`;
   const input = el.querySelector('#q');
   const drop = el.querySelector('#q-drop');
+  // 窄屏首屏只留图标（省一行导航高度），点开才展开输入框。
+  const toggle = el.querySelector('.search-toggle');
+  toggle.onclick = () => {
+    const open = el.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', String(open));
+    if (open) input.focus();
+    else drop.hidden = true;
+  };
 
   input.addEventListener('input', async () => {
     const q = input.value.trim();
@@ -77,6 +85,8 @@ export function initSearchBox(el) {
   });
   window.addEventListener('hashchange', () => {
     drop.hidden = true;
+    el.classList.remove('open');
+    toggle.setAttribute('aria-expanded', 'false');
   });
 }
 

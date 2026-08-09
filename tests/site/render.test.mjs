@@ -58,16 +58,51 @@ test('convCard 含日期、雪球原帖链接与话题 chips', () => {
   expect(html).toContain('精华');
 });
 
-test('convCard 原文优先：对话在前，AI 摘要降为带标签的小字行', () => {
+test('convCard：AI 摘要作导读行放在对话入口，原文仍是主体', () => {
   const entry = { id: 'x1', date: '2024-01-02', kind: 'thread', summary: '摘要文本', topics: ['投资理念'], companies: ['苹果'], like: 10, featured: true };
   const html = convCard(entry, thread);
-  expect(html.indexOf('class="dialogue')).toBeLessThan(html.indexOf('class="summary'));
+  expect(html.indexOf('summary dim')).toBeLessThan(html.indexOf('class="dialogue'));
   expect(html).toContain('AI 摘要');
-  expect(html).toContain('summary dim');
   // 拿不到正文时退回摘要标题
   const fallback = convCard(entry, null);
   expect(fallback).toContain('<h3 class="summary">');
   expect(fallback).not.toContain('dialogue');
+});
+
+test('dialogueItems：网名归一为段永平，引用链带来的同文重复被去掉', () => {
+  const long = '这是一段超过二十个字的回答，用来验证跨帖同文去重的逻辑是否生效。';
+  const conv = {
+    root: null,
+    posts: [
+      { url: 'u1', chain: [{ speaker: '甲', text: '问' }, { speaker: '段永平', text: long }] },
+      { url: 'u2', chain: [{ speaker: '大道无形我有型', text: long }, { speaker: '乙', text: '追问' }] },
+    ],
+  };
+  const items = dialogueItems(conv);
+  expect(items.map((m) => m.speaker)).toEqual(['甲', '段永平', '乙']);
+  expect(items[1].isDao).toBe(true);
+});
+
+test('dialogueItems：短句重复保留（可能是真的重复发言）', () => {
+  const conv = {
+    root: null,
+    posts: [
+      { url: 'u1', chain: [{ speaker: '甲', text: '问一' }, { speaker: '段永平', text: '是的。' }] },
+      { url: 'u2', chain: [{ speaker: '乙', text: '问二' }, { speaker: '段永平', text: '是的。' }] },
+    ],
+  };
+  expect(dialogueItems(conv).length).toBe(4);
+});
+
+test('列表卡长引用原帖折叠 4 行可展开，详情页不折叠', () => {
+  const conv = {
+    root: { user: '新浪财经', text_plain: '长'.repeat(200) },
+    posts: [{ url: 'u', chain: [{ speaker: '段永平', text: '回复' }] }],
+  };
+  const listHtml = dialogueHTML(conv, { collapse: true });
+  expect(listHtml).toContain('text clamp');
+  expect(listHtml).toContain('expand-root');
+  expect(dialogueHTML(conv, { collapse: false })).not.toContain('expand-root');
 });
 
 test('convCard 列表卡 chips 限量并折叠为 +n，详情页 allChips 显示全部', () => {

@@ -46,6 +46,16 @@ window.addEventListener('hashchange', route);
 route();
 initSearchBox(document.getElementById('searchbox'));
 
+// 卡片是 innerHTML 批量渲染的，引文展开用事件代理，一次绑定管所有卡。
+main.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('.expand-root');
+  if (!btn) return;
+  const text = btn.closest('.msg')?.querySelector('.text');
+  if (!text) return;
+  const expanded = !text.classList.toggle('clamp');
+  btn.textContent = expanded ? '收起引文' : '展开引文';
+});
+
 // 手机上顶栏占了太多可视空间：下滑阅读时隐藏，上滑或回到顶部即恢复。
 const header = document.querySelector('header');
 const narrow = window.matchMedia('(max-width: 640px)');
