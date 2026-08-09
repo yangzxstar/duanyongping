@@ -8,3 +8,6 @@ node_modules/
 skills-lock.json
 # 内部设计/计划文档，不公开
 docs/
+
+# 每日增量更新日志
+logs/
