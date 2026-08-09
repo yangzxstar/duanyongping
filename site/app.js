@@ -45,3 +45,18 @@ async function route() {
 window.addEventListener('hashchange', route);
 route();
 initSearchBox(document.getElementById('searchbox'));
+
+// 手机上顶栏占了太多可视空间：下滑阅读时隐藏，上滑或回到顶部即恢复。
+const header = document.querySelector('header');
+const narrow = window.matchMedia('(max-width: 640px)');
+let lastY = window.scrollY;
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  if (narrow.matches && y > lastY && y > header.offsetHeight) {
+    header.classList.add('hide');
+  } else if (y < lastY || y <= 0) {
+    header.classList.remove('hide');
+  }
+  lastY = y;
+}, { passive: true });
+window.addEventListener('hashchange', () => header.classList.remove('hide'));

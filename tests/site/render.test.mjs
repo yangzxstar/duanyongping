@@ -38,9 +38,11 @@ test('dialogueItems：solo 无 chain 时回落到 own_text', () => {
   ]);
 });
 
-test('dialogueHTML：超过 5 条折叠余下条目', () => {
+test('dialogueHTML：超过 5 条时余下条目进 fold，且默认展开', () => {
   const html = dialogueHTML(thread, { collapse: true });
+  expect(html).toContain('<details class="fold" open>');
   expect(html).toContain('展开全部 6 条');
+  expect(html).toContain('收起');
   expect((html.match(/class="msg/g) ?? []).length).toBe(6);
   expect(dialogueHTML(thread, { collapse: false })).not.toContain('展开全部');
 });

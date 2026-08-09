@@ -64,7 +64,8 @@ export function dialogueHTML(conv, { collapse = true } = {}) {
   const cut = collapse && items.length > 5 ? 5 : items.length;
   let html = items.slice(0, cut).map(renderMsg).join('');
   if (cut < items.length) {
-    html += `<details class="fold"><summary>展开全部 ${items.length} 条</summary>${items.slice(cut).map(renderMsg).join('')}</details>`;
+    // 默认展开（open），免去逐条点击；summary 留作"收起"开关，长帖可自行折起。
+    html += `<details class="fold" open><summary><span class="when-closed">展开全部 ${items.length} 条</span><span class="when-open">收起</span></summary>${items.slice(cut).map(renderMsg).join('')}</details>`;
   }
   return html;
 }
